@@ -2,29 +2,33 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/organisms/Footer';
+import { ProductGrid } from '@/components/ProductGrid';
+import { getFeaturedProducts } from '@/lib/products';
 import { Apple, Smartphone, ArrowRight, Zap, Shield, Truck } from 'lucide-react';
 
 const Index = () => {
+  const featuredProducts = getFeaturedProducts();
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
       
       {/* Hero Section */}
       <section className="pt-16 bg-gradient-to-br from-brand-blue to-primary-glow text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-heading font-bold mb-6">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading font-bold mb-4 sm:mb-6">
               Renovate tu tecnología con <span className="text-yellow-400">AscendHub</span>
             </h1>
-            <p className="text-xl md:text-2xl font-body mb-8 text-gray-200 max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl md:text-2xl font-body mb-6 sm:mb-8 text-gray-200 max-w-3xl mx-auto px-4">
               Comprá productos premium, entregá tu equipo viejo como parte de pago 
               y ascendé a la última tecnología sin esfuerzo.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" variant="secondary" asChild className="btn-text">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
+              <Button size="lg" variant="secondary" asChild className="btn-text w-full sm:w-auto">
                 <Link to="/trade-in">Evaluar mi Trade-In</Link>
               </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-brand-blue btn-text" asChild>
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-brand-blue btn-text w-full sm:w-auto" asChild>
                 <Link to="#secciones">Explorar Productos</Link>
               </Button>
             </div>
@@ -33,26 +37,26 @@ const Index = () => {
       </section>
 
       {/* Dual Sections - Apple World & Premium Electronics */}
-      <section id="secciones" className="py-20 bg-brand-light-gray">
+      <section id="secciones" className="py-12 sm:py-16 lg:py-20 bg-brand-light-gray">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-brand-heading mb-4">
               Explorá nuestras secciones
             </h2>
-            <p className="text-brand-body max-w-2xl mx-auto">
+            <p className="text-brand-body max-w-2xl mx-auto px-4">
               Dos mundos únicos de tecnología premium diseñados para diferentes experiencias
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             {/* Apple World Section */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-lg hover:shadow-xl transition-all duration-300 group">
               <div className="text-center">
-                <div className="bg-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:bg-gray-200 transition-colors">
-                  <Apple className="h-10 w-10 text-gray-700" />
+                <div className="bg-gray-100 rounded-full w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mx-auto mb-4 sm:mb-6 group-hover:bg-gray-200 transition-colors">
+                  <Apple className="h-8 w-8 sm:h-10 sm:w-10 text-gray-700" />
                 </div>
                 <h3 className="text-brand-subheading mb-4">Mundo Apple</h3>
-                <p className="text-brand-body mb-6 leading-relaxed">
+                <p className="text-brand-body mb-6 leading-relaxed px-2">
                   Descubrí la experiencia Apple completa. iPhone, iPad, Mac, Apple Watch y más. 
                   Diseño minimalista, calidad premium y el ecosistema que ya conocés y amás.
                 </p>
@@ -71,13 +75,13 @@ const Index = () => {
             </div>
 
             {/* Premium Electronics Section */}
-            <div className="bg-gradient-to-br from-purple-600 via-blue-600 to-teal-500 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 group text-white">
+            <div className="bg-gradient-to-br from-purple-600 via-blue-600 to-teal-500 rounded-2xl p-6 sm:p-8 shadow-lg hover:shadow-xl transition-all duration-300 group text-white">
               <div className="text-center">
-                <div className="bg-white/20 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:bg-white/30 transition-colors">
-                  <Smartphone className="h-10 w-10 text-white" />
+                <div className="bg-white/20 rounded-full w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mx-auto mb-4 sm:mb-6 group-hover:bg-white/30 transition-colors">
+                  <Smartphone className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4">Electrónicos Premium</h3>
-                <p className="text-lg mb-6 leading-relaxed opacity-90">
+                <h3 className="text-xl sm:text-2xl font-bold mb-4">Electrónicos Premium</h3>
+                <p className="text-base sm:text-lg mb-6 leading-relaxed opacity-90 px-2">
                   Descubrí la última tecnología en smartphones, tablets, laptops y accesorios. 
                   Innovación, rendimiento y diseño de las mejores marcas del mundo.
                 </p>
@@ -98,46 +102,67 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-white">
+      {/* Featured Products Section */}
+      <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-brand-heading mb-4">
-              ¿Por qué elegir AscendHub?
+              Productos Destacados
             </h2>
             <p className="text-brand-body max-w-2xl mx-auto">
+              Descubrí nuestra selección de productos más populares y las últimas novedades
+            </p>
+          </div>
+          
+          <ProductGrid 
+            products={featuredProducts}
+            section="default"
+            showFilters={false}
+            itemsPerPage={8}
+          />
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-12 sm:py-16 lg:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-brand-heading mb-4">
+              ¿Por qué elegir AscendHub?
+            </h2>
+            <p className="text-brand-body max-w-2xl mx-auto px-4">
               La forma más inteligente de renovar tu tecnología
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Zap className="h-8 w-8 text-white" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <div className="text-center px-4">
+              <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-full w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center mx-auto mb-4">
+                <Zap className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold mb-2 text-gray-900">Trade-In Inteligente</h3>
-              <p className="text-gray-600">
+              <h3 className="text-lg sm:text-xl font-bold mb-2 text-gray-900">Trade-In Inteligente</h3>
+              <p className="text-gray-600 text-sm sm:text-base">
                 Evaluamos tu equipo actual y te damos el mejor precio como parte de pago
               </p>
             </div>
 
-            <div className="text-center">
-              <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Shield className="h-8 w-8 text-white" />
+            <div className="text-center px-4">
+              <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-full w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center mx-auto mb-4">
+                <Shield className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold mb-2 text-gray-900">Productos Premium</h3>
-              <p className="text-gray-600">
-                Solo trabajamos con las mejores marcas y los productos más innovadores
+              <h3 className="text-lg sm:text-xl font-bold mb-2 text-gray-900">Garantía Premium</h3>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Todos nuestros productos incluyen garantía extendida y soporte técnico especializado
               </p>
             </div>
 
-            <div className="text-center">
-              <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Truck className="h-8 w-8 text-white" />
+            <div className="text-center px-4 sm:col-span-2 lg:col-span-1">
+              <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-full w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center mx-auto mb-4">
+                <Truck className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold mb-2 text-gray-900">Proceso Rápido</h3>
-              <p className="text-gray-600">
-                Evaluación instantánea, compra segura y entrega rápida en todo el país
+              <h3 className="text-lg sm:text-xl font-bold mb-2 text-gray-900">Envío Express</h3>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Recibí tu nuevo equipo en 24-48hs con envío gratuito en CABA y GBA
               </p>
             </div>
           </div>

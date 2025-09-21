@@ -265,3 +265,82 @@ export interface TradeInDevice {
   category: 'smartphone' | 'tablet' | 'laptop' | 'smartwatch' | 'auriculares' | 'consola';
   base_values: Record<string, number>; // condition -> value mapping
 }
+
+// Tipos adicionales para el sistema de productos y catálogo
+export interface ProductFilters {
+  category?: string;
+  brand?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  condition?: 'new' | 'used' | 'refurbished';
+  inStock?: boolean;
+  featured?: boolean;
+  search?: string;
+}
+
+export interface ProductSortOption {
+  value: string;
+  label: string;
+  field: keyof Product;
+  direction: 'asc' | 'desc';
+}
+
+export interface ProductGridProps {
+  products?: Product[];
+  filters?: ProductFilters;
+  sortBy?: string;
+  viewMode?: 'grid' | 'list';
+  itemsPerPage?: number;
+  section?: 'apple' | 'electronics' | 'default';
+}
+
+export interface ProductCardProps {
+  product: Product;
+  section?: 'apple' | 'electronics' | 'default';
+  onAddToCart?: (product: Product) => void;
+  showQuickView?: boolean;
+}
+
+export interface CartSidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export interface ProductRating {
+  average: number;
+  count: number;
+  distribution: {
+    5: number;
+    4: number;
+    3: number;
+    2: number;
+    1: number;
+  };
+}
+
+export interface EnhancedProduct extends Product {
+  rating?: ProductRating;
+  discount_percentage?: number;
+  is_new_arrival?: boolean;
+  is_bestseller?: boolean;
+  tags?: string[];
+  variants?: ProductVariant[];
+}
+
+export interface ProductVariant {
+  id: string;
+  name: string;
+  value: string;
+  price_adjustment: number;
+  stock_quantity: number;
+  image_url?: string;
+}
+
+export interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
