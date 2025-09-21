@@ -4,6 +4,44 @@
 
 **URL**: https://lovable.dev/projects/1a306bf4-9459-4883-9430-9d1a32a040ba
 
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+ 
+- npm or yarn
+- Supabase account (for backend services)
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd ascendhub-tradein-flow
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Set up environment variables:
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
+
+4. Start the development server:
+```bash
+npm run dev
+```
+
+## 📚 Documentation
+
+- **[Performance Optimizations](./PERFORMANCE_OPTIMIZATIONS.md)** - Detailed guide on implemented performance improvements
+- **[PWA Guide](./PWA_GUIDE.md)** - Complete Progressive Web App implementation guide
+- **[Testing Guide](./TESTING_GUIDE.md)** - Testing strategies, coverage reports, and best practices
+
 ## How can I edit this code?
 
 There are several ways of editing your application.

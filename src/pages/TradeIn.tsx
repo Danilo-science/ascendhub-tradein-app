@@ -7,7 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, X, Camera, CheckCircle } from 'lucide-react';
+import { Upload, X, Camera, CheckCircle, AlertCircle } from 'lucide-react';
+import { validateTradeInForm, sanitizeString, isValidImageFile, checkRateLimit } from '@/lib/security';
+import { toast } from '@/hooks/use-toast';
 
 interface TradeInFormData {
   // Información del producto
@@ -60,12 +62,21 @@ const TradeIn = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const handleInputChange = (field: keyof TradeInFormData, value: string) => {
+    // Sanitizar el input antes de guardarlo
+    const sanitizedValue = sanitizeString(value);
+    
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: sanitizedValue
     }));
+    
+    // Limpiar errores de validación cuando el usuario empiece a escribir
+    if (validationErrors.length > 0) {
+      setValidationErrors([]);
+    }
   };
 
   const handleAccesoriosChange = (accesorio: string, checked: boolean) => {
@@ -79,14 +90,42 @@ const TradeIn = () => {
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    if (files.length + formData.imagenes.length > 6) {
-      alert('Máximo 6 imágenes permitidas');
+    
+    // Validar cada archivo
+    const validFiles: File[] = [];
+    const errors: string[] = [];
+    
+    files.forEach(file => {
+      if (!isValidImageFile(file)) {
+        errors.push(`${file.name}: Formato no válido o archivo muy grande (máx. 5MB)`);
+      } else {
+        validFiles.push(file);
+      }
+    });
+    
+    if (errors.length > 0) {
+      toast({
+        title: "Error en archivos",
+        description: errors.join(', '),
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Verificar límite total de imágenes
+    const totalImages = formData.imagenes.length + validFiles.length;
+    if (totalImages > 6) {
+      toast({
+        title: "Límite excedido",
+        description: "No puedes subir más de 6 imágenes en total",
+        variant: "destructive",
+      });
       return;
     }
     
     setFormData(prev => ({
       ...prev,
-      imagenes: [...prev.imagenes, ...files]
+      imagenes: [...prev.imagenes, ...validFiles]
     }));
   };
 
@@ -99,13 +138,55 @@ const TradeIn = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Rate limiting - prevenir spam
+    const userIdentifier = formData.email || 'anonymous';
+    if (!checkRateLimit(userIdentifier, 3, 300000)) { // 3 intentos por 5 minutos
+      toast({
+        title: "Demasiados intentos",
+        description: "Por favor espera unos minutos antes de intentar nuevamente",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validar formulario completo
+    const validation = validateTradeInForm(formData);
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors);
+      toast({
+        title: "Errores en el formulario",
+        description: "Por favor corrige los errores indicados",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
+    setValidationErrors([]);
     
-    // Simular envío del formulario
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsSubmitting(false);
-    setSubmitted(true);
+    try {
+      // Simular envío del formulario con validación adicional
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Aquí iría la lógica real de envío a la API
+      // const response = await submitTradeInRequest(formData);
+      
+      setSubmitted(true);
+      
+      toast({
+        title: "Solicitud enviada",
+        description: "Tu solicitud de trade-in ha sido enviada exitosamente",
+      });
+    } catch (error) {
+      toast({
+        title: "Error al enviar",
+        description: "Hubo un problema al enviar tu solicitud. Inténtalo nuevamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const nextStep = () => {
@@ -190,6 +271,26 @@ const TradeIn = () => {
           </div>
 
           <form onSubmit={handleSubmit}>
+            {/* Mostrar errores de validación */}
+            {validationErrors.length > 0 && (
+              <Card className="mb-6 border-red-200 bg-red-50">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-red-800 mb-2">
+                        Por favor corrige los siguientes errores:
+                      </h4>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+                        {validationErrors.map((error, index) => (
+                          <li key={index}>{error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             {/* Step 1: Información del Producto */}
             {currentStep === 1 && (
               <Card>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo, useCallback, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Menu, X, Apple, Zap, Home, Smartphone, RefreshCw, User, Search } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
@@ -12,30 +12,25 @@ interface NavigationProps {
 
 type NavigationTheme = 'apple' | 'electronics' | 'default';
 
-const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
+const Navigation: React.FC<NavigationProps> = memo(({ className = '' }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [theme, setTheme] = useState<NavigationTheme>('default');
   const location = useLocation();
   const navigate = useNavigate();
   const { state } = useCart();
 
-  // Determinar el tema basado en la ruta actual
-  useEffect(() => {
+  // Memoizar el tema basado en la ruta actual
+  const theme = useMemo<NavigationTheme>(() => {
     const path = location.pathname;
-    if (path.startsWith('/apple')) {
-      setTheme('apple');
-    } else if (path.startsWith('/electronica')) {
-      setTheme('electronics');
-    } else {
-      setTheme('default');
-    }
+    if (path.startsWith('/apple')) return 'apple';
+    if (path.startsWith('/electronica')) return 'electronics';
+    return 'default';
   }, [location.pathname]);
 
-  // Configuración de temas
-  const themeConfig = {
+  // Configuración de temas memoizada
+  const themeConfig = useMemo(() => ({
     apple: {
       bg: 'bg-white/95 backdrop-blur-md border-gray-200/20',
       text: 'text-gray-900',
@@ -48,9 +43,9 @@ const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
     electronics: {
       bg: 'bg-gradient-to-r from-purple-900/95 to-blue-900/95 backdrop-blur-md border-purple-500/20',
       text: 'text-white',
-      textSecondary: 'text-purple-100',
-      hover: 'hover:text-white hover:bg-white/10',
-      button: 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white',
+      textSecondary: 'text-purple-300',
+      hover: 'hover:text-white hover:bg-purple-700/50',
+      button: 'bg-purple-600 hover:bg-purple-700 text-white',
       logo: 'text-white',
       accent: 'text-purple-300'
     },
@@ -63,11 +58,12 @@ const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
       logo: 'text-blue-600',
       accent: 'text-blue-600'
     }
-  };
+  }), []);
 
   const currentTheme = themeConfig[theme];
 
-  const navigationItems = [
+  // Memoizar items de navegación
+  const navigationItems = useMemo(() => [
     { 
       name: 'Inicio', 
       href: '/', 
@@ -98,12 +94,16 @@ const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
        href: '/dashboard', 
        icon: <User className="w-4 h-4" /> 
      }
-  ];
+  ], []);
 
-  const totalItems = state.items.reduce((sum, item) => sum + item.quantity, 0);
+  // Memoizar total de items
+  const totalItems = useMemo(() => 
+    state.items.reduce((sum, item) => sum + item.quantity, 0), 
+    [state.items]
+  );
 
-  // Función para manejar la búsqueda
-  const handleSearch = (e: React.FormEvent) => {
+  // Función para manejar la búsqueda con useCallback
+  const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       // Navegar a una página de resultados de búsqueda con el query como parámetro
@@ -112,10 +112,10 @@ const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
       setIsSearchOpen(false);
       setIsMenuOpen(false);
     }
-  };
+  }, [searchQuery, navigate]);
 
   // Función para alternar la búsqueda
-  const toggleSearch = () => {
+  const toggleSearch = useCallback(() => {
     setIsSearchOpen(!isSearchOpen);
     if (!isSearchOpen) {
       // Focus en el input cuando se abre
@@ -126,7 +126,7 @@ const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
         }
       }, 100);
     }
-  };
+  }, [isSearchOpen]);
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 ${currentTheme.bg} border-b ${className}`}>
@@ -315,6 +315,8 @@ const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
       />
     </nav>
   );
-};
+});
+
+Navigation.displayName = 'Navigation';
 
 export default Navigation;

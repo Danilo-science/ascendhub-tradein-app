@@ -193,6 +193,25 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Mostrar errores de validación */}
+            {validationErrors.length > 0 && (
+              <div className="mb-6 p-4 border border-red-200 bg-red-50 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-red-800 mb-2">
+                      Por favor corrige los siguientes errores:
+                    </h4>
+                    <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+                      {validationErrors.map((error, index) => (
+                        <li key={index}>{error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Iniciar Sesión</TabsTrigger>
