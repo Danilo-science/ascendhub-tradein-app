@@ -1,16 +1,19 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { Profile } from '@/types';
+import { Profile, ExtendedUser } from '@/types';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, userData?: { first_name?: string; last_name?: string }) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: unknown }>;
+  signUp: (email: string, password: string, userData?: { first_name?: string; last_name?: string }) => Promise<{ error: unknown }>;
   signOut: () => Promise<void>;
+  // Nuevas funciones para integración con NextAuth
+  syncWithNextAuth: (nextAuthUser: ExtendedUser) => Promise<void>;
+  getAuthToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -103,6 +106,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  // Función para sincronizar usuario de NextAuth con Supabase
+  const syncWithNextAuth = async (nextAuthUser: ExtendedUser) => {
+    try {
+      // Verificar si el usuario ya existe en Supabase
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', nextAuthUser.supabaseId || nextAuthUser.id)
+        .single();
+
+      if (!existingProfile && nextAuthUser.supabaseId) {
+        // Crear perfil en Supabase si no existe
+        const { error } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: nextAuthUser.supabaseId,
+            first_name: nextAuthUser.name?.split(' ')[0] || '',
+            last_name: nextAuthUser.name?.split(' ').slice(1).join(' ') || '',
+            role: 'customer',
+            avatar_url: nextAuthUser.image,
+          });
+
+        if (error) {
+          console.error('Error creating Supabase profile:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error syncing NextAuth with Supabase:', error);
+    }
+  };
+
+  // Función para obtener el token de autenticación
+  const getAuthToken = async (): Promise<string | null> => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session?.access_token || null;
+    } catch (error) {
+      console.error('Error getting auth token:', error);
+      return null;
+    }
+  };
+
   const value = {
     user,
     session,
@@ -111,11 +156,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signUp,
     signOut,
+    syncWithNextAuth,
+    getAuthToken,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

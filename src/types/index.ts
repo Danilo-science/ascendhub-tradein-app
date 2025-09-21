@@ -9,7 +9,7 @@ export interface Product {
   category_id?: string;
   brand?: string;
   model?: string;
-  specs?: Record<string, any>;
+  specs?: Record<string, string | number | boolean>;
   images: string[];
   status: 'active' | 'inactive' | 'out_of_stock';
   condition: 'new' | 'used' | 'refurbished';
@@ -60,7 +60,13 @@ export interface Order {
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   payment_id?: string;
   payment_status?: string;
-  shipping_address?: Record<string, any>;
+  shipping_address?: {
+    street: string;
+    city: string;
+    state: string;
+    postal_code: string;
+    country: string;
+  };
   items: CartItem[];
   tradein_request_id?: string;
   created_at: string;
@@ -99,4 +105,163 @@ export interface TradeInFormData {
   contact_email: string;
   contact_phone?: string;
   images?: File[];
+}
+
+// NextAuth Types
+export interface ExtendedUser {
+  id: string;
+  email: string;
+  name?: string;
+  image?: string;
+  supabaseId?: string;
+}
+
+export interface ExtendedSession {
+  user: ExtendedUser;
+  expires: string;
+}
+
+// Cloudinary Types
+export interface CloudinaryImage {
+  public_id: string;
+  secure_url: string;
+  width: number;
+  height: number;
+  format: string;
+  bytes: number;
+}
+
+export interface ImageUploadResult {
+  success: boolean;
+  images?: CloudinaryImage[];
+  error?: string;
+}
+
+// MercadoPago Types
+export interface PaymentPreference {
+  id: string;
+  init_point: string;
+  sandbox_init_point: string;
+  collector_id: number;
+  client_id: string;
+  items: PaymentItem[];
+  payer: PaymentPayer;
+  back_urls: PaymentBackUrls;
+  auto_return: string;
+  payment_methods: PaymentMethods;
+  notification_url: string;
+  statement_descriptor: string;
+  external_reference: string;
+  expires: boolean;
+  expiration_date_from?: string;
+  expiration_date_to?: string;
+}
+
+export interface PaymentItem {
+  id: string;
+  title: string;
+  description?: string;
+  picture_url?: string;
+  category_id?: string;
+  quantity: number;
+  currency_id: string;
+  unit_price: number;
+}
+
+export interface PaymentPayer {
+  name?: string;
+  surname?: string;
+  email: string;
+  phone?: {
+    area_code?: string;
+    number?: string;
+  };
+  identification?: {
+    type?: string;
+    number?: string;
+  };
+  address?: {
+    street_name?: string;
+    street_number?: string;
+    zip_code?: string;
+  };
+}
+
+export interface PaymentBackUrls {
+  success?: string;
+  failure?: string;
+  pending?: string;
+}
+
+export interface PaymentMethods {
+  excluded_payment_methods?: Array<{ id: string }>;
+  excluded_payment_types?: Array<{ id: string }>;
+  installments?: number;
+}
+
+export interface PaymentInfo {
+  id: string;
+  status: string;
+  status_detail: string;
+  transaction_amount: number;
+  currency_id: string;
+  payer: PaymentPayer;
+  payment_method_id: string;
+  payment_type_id: string;
+  external_reference?: string;
+  date_created: string;
+  date_approved?: string;
+}
+
+// Webhook Types
+export interface WebhookNotification {
+  id: string;
+  live_mode: boolean;
+  type: 'payment' | 'plan' | 'subscription' | 'invoice';
+  date_created: string;
+  application_id: string;
+  user_id: string;
+  version: string;
+  api_version: string;
+  action: string;
+  data: {
+    id: string;
+  };
+}
+
+// Enhanced Cart Types
+export interface EnhancedCartItem extends CartItem {
+  selected?: boolean;
+  notes?: string;
+  trade_in_value?: number;
+}
+
+export interface CartState {
+  items: EnhancedCartItem[];
+  total: number;
+  trade_in_discount: number;
+  final_total: number;
+  shipping_cost: number;
+  tax: number;
+}
+
+// Trade-In Enhancement Types
+export interface TradeInValuation {
+  id: string;
+  request_id: string;
+  base_value: number;
+  condition_adjustment: number;
+  market_adjustment: number;
+  final_value: number;
+  valuation_notes: string;
+  expires_at: string;
+  created_at: string;
+}
+
+export interface TradeInDevice {
+  brand: string;
+  model: string;
+  year?: number;
+  category: 'smartphone' | 'tablet' | 'laptop' | 'smartwatch' | 'auriculares' | 'consola';
+  base_values: Record<string, number>; // condition -> value mapping
 }

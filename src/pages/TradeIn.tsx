@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Header } from '@/components/organisms/Header';
+import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/organisms/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -119,7 +119,7 @@ const TradeIn = () => {
   if (submitted) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        <Navigation />
         <div className="pt-16 pb-20">
           <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div className="bg-white rounded-2xl p-8 shadow-lg">
@@ -152,7 +152,7 @@ const TradeIn = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Navigation />
       
       <div className="pt-16 pb-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

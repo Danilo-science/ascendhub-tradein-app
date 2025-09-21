@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Header } from '@/components/organisms/Header';
+import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/organisms/Footer';
-import { Apple, Smartphone, ArrowRight } from 'lucide-react';
+import { Apple, Smartphone, ArrowRight, Zap, Shield, Truck } from 'lucide-react';
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Navigation />
       
       {/* Hero Section */}
       <section className="pt-16 bg-gradient-to-br from-brand-blue to-primary-glow text-white">
@@ -22,7 +22,7 @@ const Index = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" variant="secondary" asChild className="btn-text">
-                <Link to="/parte-de-pago">Evaluar mi Trade-In</Link>
+                <Link to="/trade-in">Evaluar mi Trade-In</Link>
               </Button>
               <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-brand-blue btn-text" asChild>
                 <Link to="#secciones">Explorar Productos</Link>
@@ -71,25 +71,25 @@ const Index = () => {
             </div>
 
             {/* Premium Electronics Section */}
-            <div className="bg-gradient-to-br from-brand-blue to-primary-glow rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 group text-white">
+            <div className="bg-gradient-to-br from-purple-600 via-blue-600 to-teal-500 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 group text-white">
               <div className="text-center">
                 <div className="bg-white/20 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:bg-white/30 transition-colors">
                   <Smartphone className="h-10 w-10 text-white" />
                 </div>
-                <h3 className="text-brand-subheading mb-4">Mundo Gaming</h3>
-                <p className="text-brand-body mb-6 leading-relaxed">
-                  Sumérgete en el universo gaming. PlayStation, Xbox, Nintendo, PC Gaming y accesorios. 
-                  Rendimiento extremo, gráficos increíbles y la adrenalina que buscás.
+                <h3 className="text-2xl font-bold mb-4">Electrónicos Premium</h3>
+                <p className="text-lg mb-6 leading-relaxed opacity-90">
+                  Descubrí la última tecnología en smartphones, tablets, laptops y accesorios. 
+                  Innovación, rendimiento y diseño de las mejores marcas del mundo.
                 </p>
                 <div className="flex flex-wrap justify-center gap-2 mb-6">
-                  <span className="px-3 py-1 bg-brand-light-gray text-brand-gray-dark rounded-full text-sm font-body">PlayStation</span>
-                  <span className="px-3 py-1 bg-brand-light-gray text-brand-gray-dark rounded-full text-sm font-body">Xbox</span>
-                  <span className="px-3 py-1 bg-brand-light-gray text-brand-gray-dark rounded-full text-sm font-body">Nintendo</span>
-                  <span className="px-3 py-1 bg-brand-light-gray text-brand-gray-dark rounded-full text-sm font-body">PC Gaming</span>
+                  <span className="px-3 py-1 bg-white/20 text-white rounded-full text-sm font-medium">Samsung</span>
+                  <span className="px-3 py-1 bg-white/20 text-white rounded-full text-sm font-medium">Google</span>
+                  <span className="px-3 py-1 bg-white/20 text-white rounded-full text-sm font-medium">Laptops</span>
+                  <span className="px-3 py-1 bg-white/20 text-white rounded-full text-sm font-medium">Accesorios</span>
                 </div>
-                <Button asChild className="w-full btn-text">
-                  <Link to="/gaming">
-                    Explorar Gaming <ArrowRight className="ml-2 h-4 w-4" />
+                <Button asChild className="w-full bg-white text-purple-600 hover:bg-gray-100 font-semibold">
+                  <Link to="/electronics">
+                    Explorar Electrónicos <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
               </div>
@@ -112,31 +112,31 @@ const Index = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="bg-accent-green rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl text-white">💰</span>
+              <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Zap className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-brand-subheading mb-2">Trade-In Inteligente</h3>
-              <p className="text-brand-body">
+              <h3 className="text-xl font-bold mb-2 text-gray-900">Trade-In Inteligente</h3>
+              <p className="text-gray-600">
                 Evaluamos tu equipo actual y te damos el mejor precio como parte de pago
               </p>
             </div>
 
             <div className="text-center">
-              <div className="bg-accent-orange rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl text-white">🚀</span>
+              <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Shield className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-brand-subheading mb-2">Productos Premium</h3>
-              <p className="text-brand-body">
+              <h3 className="text-xl font-bold mb-2 text-gray-900">Productos Premium</h3>
+              <p className="text-gray-600">
                 Solo trabajamos con las mejores marcas y los productos más innovadores
               </p>
             </div>
 
             <div className="text-center">
-              <div className="bg-accent-purple rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl text-white">⚡</span>
+              <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Truck className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-brand-subheading mb-2">Proceso Rápido</h3>
-              <p className="text-brand-body">
+              <h3 className="text-xl font-bold mb-2 text-gray-900">Proceso Rápido</h3>
+              <p className="text-gray-600">
                 Evaluación instantánea, compra segura y entrega rápida en todo el país
               </p>
             </div>
@@ -154,7 +154,7 @@ const Index = () => {
             Comenzá tu proceso de trade-in hoy y descubrí cuánto vale tu equipo actual
           </p>
           <Button size="lg" variant="secondary" asChild className="btn-text">
-            <Link to="/parte-de-pago">Evaluar mi Trade-In Ahora</Link>
+            <Link to="/trade-in">Evaluar mi Trade-In Ahora</Link>
           </Button>
         </div>
       </section>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useEffect, useRef } from 'react';
 
 export interface Product {
   id: string;
@@ -28,6 +28,10 @@ export interface CartItem {
   product: Product;
   quantity: number;
   selectedSpecs?: Record<string, string>;
+  // Nuevas propiedades para funcionalidad mejorada
+  addedAt?: Date;
+  lastModified?: Date;
+  notes?: string;
 }
 
 export interface CartState {
@@ -37,6 +41,21 @@ export interface CartState {
   tradeInCredit: number;
   total: number;
   isOpen: boolean;
+  // Nuevas propiedades para funcionalidad mejorada
+  lastSaved?: Date;
+  sessionId?: string;
+  currency: string;
+  discounts: Array<{
+    id: string;
+    type: 'percentage' | 'fixed';
+    value: number;
+    description: string;
+  }>;
+  shipping: {
+    method?: string;
+    cost: number;
+    estimatedDays?: number;
+  };
 }
 
 type CartAction =
@@ -46,7 +65,12 @@ type CartAction =
   | { type: 'SET_TRADE_IN'; payload: { tradeInDevice: TradeInDevice } }
   | { type: 'REMOVE_TRADE_IN' }
   | { type: 'TOGGLE_CART' }
-  | { type: 'CLEAR_CART' };
+  | { type: 'CLEAR_CART' }
+  | { type: 'LOAD_CART'; payload: { cartData: CartState } }
+  | { type: 'SAVE_CART' }
+  | { type: 'ADD_DISCOUNT'; payload: { discount: CartState['discounts'][0] } }
+  | { type: 'REMOVE_DISCOUNT'; payload: { discountId: string } }
+  | { type: 'SET_SHIPPING'; payload: { shipping: CartState['shipping'] } };
 
 const initialState: CartState = {
   items: [],
@@ -55,6 +79,11 @@ const initialState: CartState = {
   tradeInCredit: 0,
   total: 0,
   isOpen: false,
+  currency: 'ARS',
+  discounts: [],
+  shipping: {
+    cost: 0,
+  },
 };
 
 function calculateTotals(items: CartItem[], tradeInCredit: number) {
@@ -80,7 +109,14 @@ function cartReducer(state: CartState, action: CartAction): CartState {
             : item
         );
       } else {
-        newItems = [...state.items, { product, quantity, selectedSpecs }];
+        const now = new Date();
+        newItems = [...state.items, { 
+          product, 
+          quantity, 
+          selectedSpecs,
+          addedAt: now,
+          lastModified: now
+        }];
       }
 
       const { subtotal, total } = calculateTotals(newItems, state.tradeInCredit);
@@ -154,6 +190,37 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case 'CLEAR_CART':
       return {
         ...initialState,
+        sessionId: state.sessionId, // Mantener el sessionId
+      };
+
+    case 'LOAD_CART':
+      return {
+        ...action.payload.cartData,
+        isOpen: state.isOpen, // Mantener el estado del drawer
+      };
+
+    case 'SAVE_CART':
+      return {
+        ...state,
+        lastSaved: new Date(),
+      };
+
+    case 'ADD_DISCOUNT':
+      return {
+        ...state,
+        discounts: [...state.discounts, action.payload.discount],
+      };
+
+    case 'REMOVE_DISCOUNT':
+      return {
+        ...state,
+        discounts: state.discounts.filter(d => d.id !== action.payload.discountId),
+      };
+
+    case 'SET_SHIPPING':
+      return {
+        ...state,
+        shipping: action.payload.shipping,
       };
 
     default:
@@ -167,15 +234,53 @@ const CartContext = createContext<{
 } | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(cartReducer, initialState);
+  const [state, dispatch] = useReducer(cartReducer, {
+    ...initialState,
+    sessionId: crypto.randomUUID(),
+  });
+  const isInitialMount = useRef(true);
 
-  return (
-    <CartContext.Provider value={{ state, dispatch }}>
-      {children}
-    </CartContext.Provider>
-  );
+  // Cargar desde localStorage al montar
+  useEffect(() => {
+    const savedCart = localStorage.getItem('ascendhub-cart');
+    if (savedCart) {
+      try {
+        const cartData = JSON.parse(savedCart);
+        // Convertir fechas de string a Date
+        if (cartData.items) {
+          cartData.items = cartData.items.map((item: CartItem & { addedAt?: string; lastModified?: string }) => ({
+            ...item,
+            addedAt: item.addedAt ? new Date(item.addedAt) : undefined,
+            lastModified: item.lastModified ? new Date(item.lastModified) : undefined,
+          }));
+        }
+        if (cartData.lastSaved) {
+          cartData.lastSaved = new Date(cartData.lastSaved);
+        }
+        dispatch({ type: 'LOAD_CART', payload: { cartData } });
+      } catch (error) {
+        console.error('Error loading cart from localStorage:', error);
+      }
+    }
+    isInitialMount.current = false;
+  }, []);
+
+  // Guardar en localStorage cuando el carrito cambie (excepto en el primer render)
+  useEffect(() => {
+    if (isInitialMount.current) return;
+    
+    const cartToSave = {
+      ...state,
+      isOpen: false, // No guardar el estado del drawer
+    };
+    localStorage.setItem('ascendhub-cart', JSON.stringify(cartToSave));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.items, state.tradeInDevice, state.discounts, state.shipping, state.subtotal, state.tradeInCredit, state.total]);
+
+  return <CartContext.Provider value={{ state, dispatch }}>{children}</CartContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useCart() {
   const context = useContext(CartContext);
   if (!context) {
@@ -185,6 +290,7 @@ export function useCart() {
 }
 
 // Helper hooks for common cart operations
+// eslint-disable-next-line react-refresh/only-export-components
 export function useCartActions() {
   const { dispatch } = useCart();
 
@@ -216,6 +322,26 @@ export function useCartActions() {
     dispatch({ type: 'CLEAR_CART' });
   };
 
+  const addDiscount = (discount: CartState['discounts'][0]) => {
+    dispatch({ type: 'ADD_DISCOUNT', payload: { discount } });
+  };
+
+  const removeDiscount = (discountId: string) => {
+    dispatch({ type: 'REMOVE_DISCOUNT', payload: { discountId } });
+  };
+
+  const setShipping = (shipping: CartState['shipping']) => {
+    dispatch({ type: 'SET_SHIPPING', payload: { shipping } });
+  };
+
+  const saveCart = () => {
+    dispatch({ type: 'SAVE_CART' });
+  };
+
+  const loadCart = (cartData: CartState) => {
+    dispatch({ type: 'LOAD_CART', payload: { cartData } });
+  };
+
   return {
     addItem,
     removeItem,
@@ -224,5 +350,10 @@ export function useCartActions() {
     removeTradeIn,
     toggleCart,
     clearCart,
+    addDiscount,
+    removeDiscount,
+    setShipping,
+    saveCart,
+    loadCart,
   };
 }
