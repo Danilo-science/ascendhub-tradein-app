@@ -2,6 +2,10 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '../utils'
 import { ProductCard } from '@/components/ProductCard'
 import { mockProduct } from '../utils'
+import { useCart } from '@/hooks/useCart'
+
+// Mock del hook useCart
+vi.mock('@/hooks/useCart')
 
 // Mock del hook useCartActions
 vi.mock('@/contexts/CartContext', () => ({
@@ -47,7 +51,7 @@ describe('ProductCard', () => {
 
   it('permite agregar al carrito cuando está en stock', () => {
     const mockAddToCart = vi.fn()
-    vi.mocked(require('@/hooks/useCart').useCart).mockReturnValue({
+    vi.mocked(useCart).mockReturnValue({
       addToCart: mockAddToCart,
       addToWishlist: vi.fn(),
       addToComparison: vi.fn(),
@@ -65,7 +69,7 @@ describe('ProductCard', () => {
 
   it('permite agregar a wishlist', () => {
     const mockAddToWishlist = vi.fn()
-    vi.mocked(require('@/hooks/useCart').useCart).mockReturnValue({
+    vi.mocked(useCart).mockReturnValue({
       addToCart: vi.fn(),
       addToWishlist: mockAddToWishlist,
       addToComparison: vi.fn(),
@@ -82,7 +86,7 @@ describe('ProductCard', () => {
   })
 
   it('muestra el estado correcto cuando está en wishlist', () => {
-    vi.mocked(require('@/hooks/useCart').useCart).mockReturnValue({
+    vi.mocked(useCart).mockReturnValue({
       addToCart: vi.fn(),
       addToWishlist: vi.fn(),
       addToComparison: vi.fn(),

@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Star, ShoppingCart, Heart, Eye, Badge, Zap, GitCompare, Plus, Minus } from 'lucide-react';
-import { EnhancedProduct } from '@/types';
+import { motion } from 'motion/react';
+import { EnhancedProduct, Product } from '@/types';
 import { useCartActions } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -35,20 +36,26 @@ export const ProductCard = memo<ProductCardProps>(({
   
   const [imageLoaded, setImageLoaded] = React.useState(false);
 
-  // Convertir producto a formato CartProduct
-  const convertToCartProduct = (product: EnhancedProduct) => ({
+  // Convertir EnhancedProduct a Product para compatibilidad con el contexto
+  const convertToProduct = (product: EnhancedProduct): Product => ({
     id: product.id,
-    name: product.title,
-    brand: product.brand || '',
-    model: product.model || '',
+    title: product.title,
+    slug: product.slug,
+    description: product.description,
+    short_description: product.short_description,
     price: product.price,
-    originalPrice: product.original_price,
-    image: product.images?.[0] || '',
-    category: (product.brand?.toLowerCase() === 'apple' ? 'apple' : 'electronica') as 'apple' | 'electronica',
-    specifications: Object.fromEntries(
-      Object.entries(product.specs || {}).map(([key, value]) => [key, String(value)])
-    ),
-    inStock: product.stock_quantity > 0
+    original_price: product.original_price,
+    category_id: product.category_id,
+    brand: product.brand,
+    model: product.model,
+    specs: product.specs,
+    images: product.images || [],
+    status: product.status || 'active',
+    condition: product.condition || 'new',
+    stock_quantity: product.stock_quantity || 0,
+    featured: product.featured || false,
+    created_at: product.created_at || new Date().toISOString(),
+    updated_at: product.updated_at || new Date().toISOString(),
   });
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -78,7 +85,7 @@ export const ProductCard = memo<ProductCardProps>(({
   const handleWishlistToggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const cartProduct = convertToCartProduct(product);
+    const productForCart = convertToProduct(product);
     
     if (isInWishlist(product.id)) {
       removeFromWishlist(product.id);
@@ -89,7 +96,7 @@ export const ProductCard = memo<ProductCardProps>(({
         duration: 3000
       });
     } else {
-      addToWishlist(cartProduct);
+      addToWishlist(productForCart);
       showNotification({
         type: 'success',
         message: `${product.title} agregado a favoritos`,
@@ -102,7 +109,7 @@ export const ProductCard = memo<ProductCardProps>(({
   const handleComparisonToggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const cartProduct = convertToCartProduct(product);
+    const productForCart = convertToProduct(product);
     
     if (isInComparison(product.id)) {
       removeFromComparison(product.id);
@@ -113,7 +120,7 @@ export const ProductCard = memo<ProductCardProps>(({
         duration: 3000
       });
     } else {
-      addToComparison(cartProduct);
+      addToComparison(productForCart);
       showNotification({
         type: 'success',
         message: `${product.title} agregado a comparación`,
@@ -139,23 +146,23 @@ export const ProductCard = memo<ProductCardProps>(({
     switch (section) {
       case 'apple':
         return {
-          card: 'bg-gradient-to-br from-slate-50 to-gray-100 border-gray-200 hover:shadow-xl transition-all duration-300',
-          badge: 'bg-gradient-to-r from-gray-800 to-black text-white',
-          button: 'bg-black hover:bg-gray-800 text-white',
+          card: 'bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 hover:border-white/30 transition-all duration-500 shadow-lg hover:shadow-2xl hover:shadow-gray-500/20',
+          badge: 'bg-gradient-to-r from-gray-800 to-black text-white shadow-lg',
+          button: 'bg-gradient-to-r from-gray-800 to-black hover:from-gray-700 hover:to-gray-900 text-white shadow-lg hover:shadow-xl transition-all duration-300',
           accent: 'text-gray-800'
         };
       case 'electronics':
         return {
-          card: 'bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-200 hover:shadow-xl transition-all duration-300',
-          badge: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white',
-          button: 'bg-blue-600 hover:bg-blue-700 text-white',
+          card: 'bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 hover:border-blue-400/30 transition-all duration-500 shadow-lg hover:shadow-2xl hover:shadow-blue-500/20',
+          badge: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg',
+          button: 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg hover:shadow-xl transition-all duration-300',
           accent: 'text-blue-600'
         };
       default:
         return {
-          card: 'bg-white border-gray-200 hover:shadow-lg transition-all duration-300',
-          badge: 'bg-gradient-to-r from-purple-600 to-pink-600 text-white',
-          button: 'bg-purple-600 hover:bg-purple-700 text-white',
+          card: 'bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 hover:border-purple-400/30 transition-all duration-500 shadow-lg hover:shadow-2xl hover:shadow-purple-500/20',
+          badge: 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg',
+          button: 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-lg hover:shadow-xl transition-all duration-300',
           accent: 'text-purple-600'
         };
     }
@@ -419,89 +426,122 @@ export const ProductCard = memo<ProductCardProps>(({
   }
 
   return (
-    <Card className={`${styles.card} group cursor-pointer overflow-hidden relative`}>
-      <div className="relative aspect-square overflow-hidden">
-        <img
-          src={product.images[0]}
-          alt={product.title}
-          className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
-            imageLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          onLoad={() => setImageLoaded(true)}
-          loading="lazy"
-        />
-        {!imageLoaded && (
-          <div className="absolute inset-0 bg-gray-200 animate-pulse" />
-        )}
-        {renderBadges()}
-        {renderQuickActions()}
-      </div>
-
-      <CardContent className="p-4">
-        <div className="mb-2">
-          <h3 className="font-semibold text-lg text-gray-900 mb-1 line-clamp-2">
-            {product.title}
-          </h3>
-          <p className="text-sm text-gray-600 line-clamp-2">
-            {product.short_description}
-          </p>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      whileHover={{ y: -5 }}
+    >
+      <Card className={`${styles.card} group cursor-pointer overflow-hidden relative`}>
+        <div className="relative aspect-square overflow-hidden">
+          {/* Glow effect */}
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-400/20 via-pink-400/20 to-blue-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          
+          <img
+            src={product.images[0]}
+            alt={product.title}
+            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            onLoad={() => setImageLoaded(true)}
+            loading="lazy"
+          />
+          {!imageLoaded && (
+            <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+          )}
+          {renderBadges()}
+          {renderQuickActions()}
         </div>
 
-        {renderRating()}
-
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <span className="text-xl font-bold text-gray-900">
-              ${product.price}
-            </span>
-            {product.original_price && (
-              <span className="text-sm text-gray-500 line-through ml-2">
-                ${product.original_price}
-              </span>
-            )}
+        <CardContent className="p-4 relative">
+          {/* Subtle glow behind content */}
+          <div className="absolute inset-0 bg-gradient-to-t from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          
+          <div className="mb-2 relative z-10">
+            <motion.h3 
+              className="font-semibold text-lg text-gray-900 mb-1 line-clamp-2"
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.2 }}
+            >
+              {product.title}
+            </motion.h3>
+            <p className="text-sm text-gray-600 line-clamp-2">
+              {product.short_description}
+            </p>
           </div>
-          <span className="text-sm text-gray-600">
-            Stock: {product.stock_quantity}
-          </span>
-        </div>
 
-        {product.specs && (
-          <div className="mb-3">
-            <div className="flex flex-wrap gap-1">
-              {Object.entries(product.specs).slice(0, 2).map(([key, value]) => (
-                <span
-                  key={key}
-                  className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded"
-                >
-                  {value}
+          {renderRating()}
+
+          <div className="flex items-center justify-between mb-3 relative z-10">
+            <div>
+              <motion.span 
+                className="text-xl font-bold text-gray-900"
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.2 }}
+              >
+                ${product.price}
+              </motion.span>
+              {product.original_price && (
+                <span className="text-sm text-gray-500 line-through ml-2">
+                  ${product.original_price}
                 </span>
-              ))}
+              )}
+            </div>
+            <span className="text-sm text-gray-600">
+              Stock: {product.stock_quantity}
+            </span>
+          </div>
+
+          {product.specs && (
+            <div className="mb-3 relative z-10">
+              <div className="flex flex-wrap gap-1">
+                {Object.entries(product.specs).slice(0, 2).map(([key, value]) => (
+                  <motion.span
+                    key={key}
+                    className="text-xs bg-white/20 backdrop-blur-sm text-gray-700 px-2 py-1 rounded border border-white/30"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {value}
+                  </motion.span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Status indicators */}
+          <div className="flex items-center justify-between mb-3 text-xs relative z-10">
+            <div className="flex items-center gap-2">
+              {inWishlist && (
+                <motion.span 
+                  className="flex items-center gap-1 text-red-500"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Heart className="w-3 h-3 fill-current" />
+                  Favorito
+                </motion.span>
+              )}
+              {inComparison && (
+                <motion.span 
+                  className="flex items-center gap-1 text-blue-500"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <GitCompare className="w-3 h-3 fill-current" />
+                  En comparación
+                </motion.span>
+              )}
             </div>
           </div>
-        )}
+        </CardContent>
 
-        {/* Status indicators */}
-        <div className="flex items-center justify-between mb-3 text-xs">
-          <div className="flex items-center gap-2">
-            {inWishlist && (
-              <span className="flex items-center gap-1 text-red-500">
-                <Heart className="w-3 h-3 fill-current" />
-                Favorito
-              </span>
-            )}
-            {inComparison && (
-              <span className="flex items-center gap-1 text-blue-500">
-                <GitCompare className="w-3 h-3 fill-current" />
-                En comparación
-              </span>
-            )}
-          </div>
-        </div>
-      </CardContent>
-
-      <CardFooter className="p-4 pt-0">
-        {renderCartControls()}
-      </CardFooter>
-    </Card>
+        <CardFooter className="p-4 pt-0 relative z-10">
+          {renderCartControls()}
+        </CardFooter>
+      </Card>
+    </motion.div>
   );
 });

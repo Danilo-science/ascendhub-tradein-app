@@ -29,6 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Product } from '@/types';
 
 const Dashboard = () => {
   const { state } = useCart();
@@ -73,33 +74,33 @@ const Dashboard = () => {
     });
   };
 
-  const handleAddToCartFromWishlist = (product: any) => {
+  const handleAddToCartFromWishlist = (product: Product) => {
     // Convertir el producto de wishlist al formato necesario
     const productForCart = {
       id: product.id,
-      title: product.name,
+      title: product.title,
       price: product.price,
-      original_price: product.originalPrice,
-      images: [product.image],
+      original_price: product.original_price,
+      images: product.images,
       brand: product.brand,
       model: product.model,
-      specs: product.specifications,
-      stock_quantity: product.inStock ? 10 : 0,
-      category_id: product.category,
-      description: `${product.brand} ${product.model}`,
-      short_description: `${product.brand} ${product.model}`,
-      slug: product.id,
-      status: 'active',
-      condition: 'new',
-      featured: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      specs: product.specs,
+      stock_quantity: product.stock_quantity,
+      category_id: product.category_id,
+      description: product.description || `${product.brand} ${product.model}`,
+      short_description: product.short_description || `${product.brand} ${product.model}`,
+      slug: product.slug,
+      status: product.status,
+      condition: product.condition,
+      featured: product.featured,
+      created_at: product.created_at,
+      updated_at: product.updated_at
     };
 
     addToCart(productForCart);
     addNotification({
       type: 'success',
-      message: `${product.name} agregado al carrito`,
+      message: `${product.title} agregado al carrito`,
       autoHide: true,
       duration: 3000
     });
@@ -107,7 +108,7 @@ const Dashboard = () => {
 
   const filteredPurchaseHistory = state.purchaseHistory.filter(order => {
     const matchesSearch = order.items.some(item => 
-      item.product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      item.product.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
     const matchesFilter = filterStatus === 'all' || order.status === filterStatus;
     return matchesSearch && matchesFilter;
@@ -293,12 +294,12 @@ const Dashboard = () => {
                             {order.items.map((item) => (
                               <div key={item.product.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
                                 <img 
-                                  src={item.product.image} 
-                                  alt={item.product.name}
+                                  src={item.product.images[0]} 
+                                  alt={item.product.title}
                                   className="w-12 h-12 object-cover rounded"
                                 />
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-sm truncate">{item.product.name}</p>
+                                  <p className="font-medium text-sm truncate">{item.product.title}</p>
                                   <p className="text-xs text-gray-600">Cantidad: {item.quantity}</p>
                                   <p className="text-xs font-medium">${item.product.price}</p>
                                 </div>
@@ -338,8 +339,8 @@ const Dashboard = () => {
                         <Card key={item.product.id} className="overflow-hidden">
                           <div className="relative">
                             <img 
-                              src={item.product.image} 
-                              alt={item.product.name}
+                              src={item.product.images[0]} 
+                              alt={item.product.title}
                               className="w-full h-48 object-cover"
                             />
                             <Button
@@ -352,13 +353,13 @@ const Dashboard = () => {
                             </Button>
                           </div>
                           <CardContent className="p-4">
-                            <h3 className="font-semibold mb-2 line-clamp-2">{item.product.name}</h3>
+                            <h3 className="font-semibold mb-2 line-clamp-2">{item.product.title}</h3>
                             <p className="text-sm text-gray-600 mb-2">{item.product.brand}</p>
                             <div className="flex items-center justify-between mb-3">
                               <span className="text-lg font-bold">${item.product.price}</span>
-                              {item.product.originalPrice && (
+                              {item.product.original_price && (
                                 <span className="text-sm text-gray-500 line-through">
-                                  ${item.product.originalPrice}
+                                  ${item.product.original_price}
                                 </span>
                               )}
                             </div>
@@ -367,10 +368,10 @@ const Dashboard = () => {
                                 size="sm" 
                                 className="flex-1"
                                 onClick={() => handleAddToCartFromWishlist(item.product)}
-                                disabled={!item.product.inStock}
+                                disabled={item.product.status === 'out_of_stock'}
                               >
                                 <ShoppingCart className="w-4 h-4 mr-2" />
-                                {item.product.inStock ? 'Agregar al carrito' : 'Sin stock'}
+                                {item.product.status !== 'out_of_stock' ? 'Agregar al carrito' : 'Sin stock'}
                               </Button>
                               <Button size="sm" variant="outline">
                                 <Eye className="w-4 h-4" />
@@ -420,8 +421,8 @@ const Dashboard = () => {
                           <Card key={item.product.id} className="overflow-hidden">
                             <div className="relative">
                               <img 
-                                src={item.product.image} 
-                                alt={item.product.name}
+                                src={item.product.images[0]} 
+                                alt={item.product.title}
                                 className="w-full h-48 object-cover"
                               />
                               <Button
@@ -434,23 +435,23 @@ const Dashboard = () => {
                               </Button>
                             </div>
                             <CardContent className="p-4">
-                              <h3 className="font-semibold mb-2 line-clamp-2">{item.product.name}</h3>
+                              <h3 className="font-semibold mb-2 line-clamp-2">{item.product.title}</h3>
                               <p className="text-sm text-gray-600 mb-2">{item.product.brand}</p>
                               <div className="flex items-center justify-between mb-3">
                                 <span className="text-lg font-bold">${item.product.price}</span>
-                                {item.product.originalPrice && (
+                                {item.product.original_price && (
                                   <span className="text-sm text-gray-500 line-through">
-                                    ${item.product.originalPrice}
+                                    ${item.product.original_price}
                                   </span>
                                 )}
                               </div>
                               
                               {/* Especificaciones clave */}
                               <div className="space-y-1 mb-3">
-                                {Object.entries(item.product.specifications).slice(0, 3).map(([key, value]) => (
+                                {item.product.specs && Object.entries(item.product.specs).slice(0, 3).map(([key, value]) => (
                                   <div key={key} className="flex justify-between text-xs">
                                     <span className="text-gray-600 capitalize">{key.replace('_', ' ')}:</span>
-                                    <span className="font-medium">{value}</span>
+                                    <span className="font-medium">{String(value)}</span>
                                   </div>
                                 ))}
                               </div>
@@ -459,10 +460,10 @@ const Dashboard = () => {
                                 size="sm" 
                                 className="w-full"
                                 onClick={() => handleAddToCartFromWishlist(item.product)}
-                                disabled={!item.product.inStock}
+                                disabled={item.product.status === 'out_of_stock'}
                               >
                                 <ShoppingCart className="w-4 h-4 mr-2" />
-                                {item.product.inStock ? 'Agregar al carrito' : 'Sin stock'}
+                                {item.product.status !== 'out_of_stock' ? 'Agregar al carrito' : 'Sin stock'}
                               </Button>
                             </CardContent>
                           </Card>

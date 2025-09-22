@@ -1,321 +1,357 @@
-import React, { useState, useEffect, memo, useCallback, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Menu, X, Apple, Zap, Home, Smartphone, RefreshCw, User, Search } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
+import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { CartSidebar } from '@/components/CartSidebar';
+import { Menu, X, ShoppingCart, User, Search, Home, Apple, Zap, Users, Mail, RefreshCw } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/hooks/useAuthContext';
+import { useIsMobile } from '@/components/ui/use-mobile';
 
 interface NavigationProps {
   className?: string;
 }
 
-type NavigationTheme = 'apple' | 'electronics' | 'default';
-
-const Navigation: React.FC<NavigationProps> = memo(({ className = '' }) => {
+const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
   const { state } = useCart();
+  const { user } = useAuth();
+  const isMobile = useIsMobile();
 
-  // Memoizar el tema basado en la ruta actual
-  const theme = useMemo<NavigationTheme>(() => {
-    const path = location.pathname;
-    if (path.startsWith('/apple')) return 'apple';
-    if (path.startsWith('/electronica')) return 'electronics';
-    return 'default';
-  }, [location.pathname]);
+  const totalItems = state.items.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Configuración de temas memoizada
-  const themeConfig = useMemo(() => ({
-    apple: {
-      bg: 'bg-white/95 backdrop-blur-md border-gray-200/20',
-      text: 'text-gray-900',
-      textSecondary: 'text-gray-600',
-      hover: 'hover:text-gray-900 hover:bg-gray-100/50',
-      button: 'bg-gray-900 hover:bg-gray-800 text-white',
-      logo: 'text-gray-900',
-      accent: 'text-gray-900'
-    },
-    electronics: {
-      bg: 'bg-gradient-to-r from-purple-900/95 to-blue-900/95 backdrop-blur-md border-purple-500/20',
-      text: 'text-white',
-      textSecondary: 'text-purple-300',
-      hover: 'hover:text-white hover:bg-purple-700/50',
-      button: 'bg-purple-600 hover:bg-purple-700 text-white',
-      logo: 'text-white',
-      accent: 'text-purple-300'
-    },
-    default: {
-      bg: 'bg-white/95 backdrop-blur-md border-gray-200/20',
-      text: 'text-gray-900',
-      textSecondary: 'text-gray-600',
-      hover: 'hover:text-blue-600 hover:bg-blue-50/50',
-      button: 'bg-blue-600 hover:bg-blue-700 text-white',
-      logo: 'text-blue-600',
-      accent: 'text-blue-600'
-    }
-  }), []);
+  const navigationItems = [
+    { name: 'Inicio', path: '/', icon: Home },
+    { name: 'Apple', path: '/apple', icon: Apple },
+    { name: 'Electro', path: '/sell', icon: Zap },
+    { name: 'Trade-In', path: '/trade-in', icon: RefreshCw },
+  ];
 
-  const currentTheme = themeConfig[theme];
-
-  // Memoizar items de navegación
-  const navigationItems = useMemo(() => [
-    { 
-      name: 'Inicio', 
-      href: '/', 
-      icon: null 
-    },
-    { 
-      name: 'Apple', 
-      href: '/apple', 
-      icon: <Apple className="w-4 h-4" /> 
-    },
-    { 
-      name: 'Electrónicos', 
-      href: '/electronica', 
-      icon: <Zap className="w-4 h-4" /> 
-    },
-    { 
-      name: 'Trade-In', 
-      href: '/parte-de-pago', 
-      icon: null 
-    },
-    { 
-      name: 'Test Cart', 
-      href: '/test-cart', 
-      icon: <ShoppingCart className="w-4 h-4" /> 
-    },
-    { 
-       name: 'Dashboard', 
-       href: '/dashboard', 
-       icon: <User className="w-4 h-4" /> 
-     }
-  ], []);
-
-  // Memoizar total de items
-  const totalItems = useMemo(() => 
-    state.items.reduce((sum, item) => sum + item.quantity, 0), 
-    [state.items]
-  );
-
-  // Función para manejar la búsqueda con useCallback
-  const handleSearch = useCallback((e: React.FormEvent) => {
+  // Función para manejar la búsqueda
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Navegar a una página de resultados de búsqueda con el query como parámetro
-      navigate(`/buscar?q=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery('');
-      setIsSearchOpen(false);
-      setIsMenuOpen(false);
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setIsMenuOpen(false); // Cerrar menú móvil si está abierto
     }
-  }, [searchQuery, navigate]);
-
-  // Función para alternar la búsqueda
-  const toggleSearch = useCallback(() => {
-    setIsSearchOpen(!isSearchOpen);
-    if (!isSearchOpen) {
-      // Focus en el input cuando se abre
-      setTimeout(() => {
-        const searchInput = document.getElementById('global-search-input');
-        if (searchInput) {
-          searchInput.focus();
-        }
-      }, 100);
-    }
-  }, [isSearchOpen]);
+  };
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 ${currentTheme.bg} border-b ${className}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link 
-            to="/" 
-            className={`flex items-center space-x-2 ${currentTheme.logo} font-bold text-lg sm:text-xl transition-colors`}
-          >
-            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xs sm:text-sm">AH</span>
-            </div>
-            <span className="hidden xs:inline sm:inline">AscendHub</span>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-6 xl:space-x-8">
-            {navigationItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`flex items-center space-x-1 px-2 xl:px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${currentTheme.text} ${currentTheme.hover} ${
-                  location.pathname === item.href ? currentTheme.accent : ''
-                }`}
+    <div className={`fixed top-0 left-0 right-0 z-50 ${className}`}>
+      <motion.nav
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className="relative"
+      >
+        {/* Main Navigation Header */}
+        <header 
+          className="relative bg-gradient-to-r from-white/10 via-white/5 to-white/10 backdrop-blur-xl border-b border-white/20
+                     before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/5 before:to-transparent before:pointer-events-none
+                     after:absolute after:inset-0 after:bg-gradient-to-r after:from-blue-500/5 after:via-transparent after:to-purple-500/5 after:pointer-events-none"
+          role="banner"
+        >
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-14 sm:h-16">
+              {/* Logo with hover/tap effects */}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                {item.icon}
-                <span className="hidden xl:inline">{item.name}</span>
-              </Link>
-            ))}
-          </div>
-
-          {/* Search Bar - Desktop */}
-          <div className="hidden md:flex items-center">
-            {isSearchOpen ? (
-              <form onSubmit={handleSearch} className="flex items-center">
-                <div className="relative">
-                  <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${currentTheme.textSecondary}`} />
-                  <Input
-                    id="global-search-input"
-                    type="text"
-                    placeholder="Buscar productos..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className={`pl-10 pr-4 py-2 w-48 lg:w-64 ${currentTheme.bg} ${currentTheme.text} border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500`}
-                    onBlur={() => {
-                      // Cerrar búsqueda si está vacía y pierde el foco
-                      if (!searchQuery.trim()) {
-                        setTimeout(() => setIsSearchOpen(false), 150);
-                      }
-                    }}
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className={`ml-2 ${currentTheme.text} ${currentTheme.hover}`}
-                  onClick={() => {
-                    setIsSearchOpen(false);
-                    setSearchQuery('');
-                  }}
+                <Link 
+                  to="/" 
+                  className="flex items-center space-x-2 text-white font-bold text-base sm:text-lg lg:text-xl"
+                  aria-label="AscendHub - Ir al inicio"
                 >
-                  <X className="w-4 h-4" />
-                </Button>
-              </form>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`${currentTheme.text} ${currentTheme.hover}`}
-                onClick={toggleSearch}
-              >
-                <Search className="w-5 h-5" />
-              </Button>
-            )}
-          </div>
+                  <div 
+                    className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg"
+                    aria-hidden="true"
+                  >
+                    <span className="text-white font-bold text-xs sm:text-sm">A</span>
+                  </div>
+                  <span className="hidden xs:block sm:inline">AscendHub</span>
+                </Link>
+              </motion.div>
 
-          {/* Cart and Mobile Menu */}
-          <div className="flex items-center space-x-2 sm:space-x-4">
-            {/* Search Button - Mobile */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`lg:hidden ${currentTheme.text} ${currentTheme.hover}`}
-              onClick={toggleSearch}
-            >
-              <Search className="w-5 h-5" />
-            </Button>
-
-            {/* Cart Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`relative ${currentTheme.text} ${currentTheme.hover}`}
-              onClick={() => setIsCartOpen(true)}
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {totalItems > 0 && (
-                <span className={`absolute -top-2 -right-2 ${currentTheme.button} text-xs rounded-full w-5 h-5 flex items-center justify-center`}>
-                  {totalItems}
-                </span>
+              {/* Desktop Navigation */}
+              {!isMobile && (
+                <nav 
+                  className="hidden md:flex lg:flex items-center space-x-1"
+                  role="navigation"
+                  aria-label="Navegación principal"
+                >
+                  {navigationItems.map((item) => {
+                    const IconComponent = item.icon;
+                    return (
+                      <motion.div
+                        key={item.path}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Link
+                          to={item.path}
+                          className={`flex items-center space-x-2 px-2 sm:px-3 lg:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
+                            location.pathname === item.path
+                              ? 'text-white bg-gradient-to-r from-blue-500/30 to-purple-500/30'
+                              : 'text-gray-300 hover:text-white hover:bg-white/10'
+                          }`}
+                        >
+                          <motion.div
+                            whileHover={{ rotate: 360 }}
+                            transition={{ duration: 0.5 }}
+                          >
+                            <IconComponent className="h-4 w-4" />
+                          </motion.div>
+                          <span className="hidden sm:inline">{item.name}</span>
+                        </Link>
+                        <motion.div
+                          className="h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
+                          initial={{ width: 0 }}
+                          animate={{ width: location.pathname === item.path ? '100%' : 0 }}
+                          transition={{ duration: 0.2 }}
+                        />
+                      </motion.div>
+                    );
+                  })}
+                </nav>
               )}
-            </Button>
 
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`lg:hidden ${currentTheme.text} ${currentTheme.hover}`}
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </Button>
+              {/* Right side actions */}
+              <section 
+                className="flex items-center space-x-2 sm:space-x-3"
+                aria-label="Acciones de usuario"
+              >
+                 {/* Search Input - Desktop */}
+                 <motion.div
+                   whileHover={{ scale: 1.02 }}
+                   whileTap={{ scale: 0.98 }}
+                   className="hidden sm:block"
+                 >
+                   <form onSubmit={handleSearch} className="relative">
+                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                     <input
+                       type="text"
+                       placeholder="Buscar productos..."
+                       value={searchQuery}
+                       onChange={(e) => setSearchQuery(e.target.value)}
+                       className="pl-10 pr-4 w-64 h-9 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:bg-white/20 focus:border-blue-500 transition-all duration-200 outline-none"
+                     />
+                   </form>
+                 </motion.div>
+
+                 {/* Cart Button */}
+                 <motion.div
+                   whileHover={{ scale: 1.05 }}
+                   whileTap={{ scale: 0.95 }}
+                   className="relative"
+                 >
+                   {user ? (
+                     <Link to="/cart">
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         className="text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
+                         aria-label={`Carrito de compras - ${totalItems} ${totalItems === 1 ? 'artículo' : 'artículos'}`}
+                       >
+                         <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
+                         {totalItems > 0 && (
+                           <motion.span
+                             initial={{ scale: 0 }}
+                             animate={{ scale: 1 }}
+                             className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shadow-lg"
+                             aria-hidden="true"
+                           >
+                             <span className="text-xs">{totalItems}</span>
+                           </motion.span>
+                         )}
+                       </Button>
+                     </Link>
+                   ) : (
+                     <Link to="/auth">
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         className="text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
+                         aria-label="Iniciar sesión para acceder al carrito"
+                       >
+                         <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
+                         {totalItems > 0 && (
+                           <motion.span
+                             initial={{ scale: 0 }}
+                             animate={{ scale: 1 }}
+                             className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shadow-lg"
+                             aria-hidden="true"
+                           >
+                             <span className="text-xs">{totalItems}</span>
+                           </motion.span>
+                         )}
+                       </Button>
+                     </Link>
+                   )}
+                 </motion.div>
+
+                 {/* User Menu / Auth Button */}
+                 {user ? (
+                   <motion.div
+                     whileHover={{ scale: 1.05 }}
+                     whileTap={{ scale: 0.95 }}
+                     className="hidden sm:block"
+                   >
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       className="text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
+                       aria-label={`Perfil de usuario - ${user.email || 'Usuario'}`}
+                     >
+                       <User className="w-4 h-4 sm:w-5 sm:h-5" />
+                     </Button>
+                   </motion.div>
+                 ) : (
+                   <motion.div
+                     whileHover={{ scale: 1.05 }}
+                     whileTap={{ scale: 0.95 }}
+                     className="hidden sm:block"
+                   >
+                     <Link to="/auth">
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         className="text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
+                         aria-label="Iniciar sesión"
+                       >
+                         <User className="w-4 h-4 sm:w-5 sm:h-5 mr-1" />
+                         <span className="text-sm">Iniciar Sesión</span>
+                       </Button>
+                     </Link>
+                   </motion.div>
+                 )}
+
+                 {/* Mobile Menu Toggle */}
+                 {isMobile && (
+                   <motion.div
+                     whileHover={{ scale: 1.05 }}
+                     whileTap={{ scale: 0.95 }}
+                   >
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       onClick={() => setIsMenuOpen(!isMenuOpen)}
+                       className="md:hidden text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
+                       aria-label={isMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+                       aria-expanded={isMenuOpen}
+                       aria-controls="mobile-menu"
+                     >
+                       {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                     </Button>
+                   </motion.div>
+                 )}
+              </section>
+            </div>
           </div>
-        </div>
+        </header>
 
         {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="lg:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 border-t border-gray-200/20">
-              {navigationItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium transition-all duration-200 ${currentTheme.text} ${currentTheme.hover} ${
-                    location.pathname === item.href ? currentTheme.accent : ''
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.icon}
-                  <span>{item.name}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
+        {isMenuOpen && isMobile && (
+          <motion.aside
+            id="mobile-menu"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ 
+              opacity: 1, 
+              height: 'auto' 
+            }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="lg:hidden overflow-hidden"
+            role="navigation"
+            aria-label="Menú móvil"
+          >
+            <div className="bg-black/20 backdrop-blur-xl border-t border-white/10">
+               <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 space-y-1 sm:space-y-2">
+                 {navigationItems.map((item) => {
+                   const IconComponent = item.icon;
+                   return (
+                     <motion.div
+                       key={item.path}
+                       whileHover={{ scale: 1.02 }}
+                       whileTap={{ scale: 0.98 }}
+                     >
+                       <Link
+                         to={item.path}
+                         onClick={() => setIsMenuOpen(false)}
+                         className={`flex items-center space-x-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-medium transition-all duration-200 ${
+                           location.pathname === item.path
+                             ? 'text-white bg-gradient-to-r from-blue-500/30 to-purple-500/30'
+                             : 'text-gray-300 hover:text-white hover:bg-white/10'
+                         }`}
+                       >
+                         <motion.div
+                           whileHover={{ rotate: 360 }}
+                           transition={{ duration: 0.5 }}
+                         >
+                           <IconComponent className="h-5 w-5" />
+                         </motion.div>
+                         <span>{item.name}</span>
+                       </Link>
+                     </motion.div>
+                   );
+                 })}
+                 
+                 {/* Mobile-only actions */}
+                 <div className="pt-2 sm:pt-3 border-t border-white/10 mt-2 sm:mt-3 space-y-1 sm:space-y-2">
+                   <div className="flex items-center justify-between px-3 sm:px-4">
+                     <span className="text-gray-400 text-sm">Acciones</span>
+                   </div>
+                   
+                   <div className="flex flex-col space-y-3 px-3 sm:px-4">
+                     
+                     {/* Search Input - Mobile */}
+                     <form onSubmit={handleSearch} className="relative">
+                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                       <input
+                         type="text"
+                         placeholder="Buscar productos..."
+                         value={searchQuery}
+                         onChange={(e) => setSearchQuery(e.target.value)}
+                         className="pl-10 pr-4 w-full h-10 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:bg-white/20 focus:border-blue-500 transition-all duration-200 outline-none"
+                       />
+                     </form>
+                     
+                     {user ? (
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         className="text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
+                         aria-label={`Perfil de usuario - ${user.email || 'Usuario'}`}
+                       >
+                         <User className="w-5 h-5" />
+                         <span className="ml-2 text-sm">Perfil</span>
+                       </Button>
+                     ) : (
+                       <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                         <Button
+                           variant="ghost"
+                           size="sm"
+                           className="text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
+                           aria-label="Iniciar sesión"
+                         >
+                           <User className="w-5 h-5" />
+                           <span className="ml-2 text-sm">Iniciar Sesión</span>
+                         </Button>
+                       </Link>
+                     )}
+                   </div>
+                 </div>
+               </div>
+             </div>
+          </motion.aside>
         )}
-
-        {/* Mobile Search Bar */}
-        {isSearchOpen && (
-          <div className="lg:hidden border-t border-gray-200/20">
-            <div className="px-4 py-3">
-              <form onSubmit={handleSearch} className="flex items-center space-x-2">
-                <div className="relative flex-1">
-                  <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${currentTheme.textSecondary}`} />
-                  <Input
-                    type="text"
-                    placeholder="Buscar productos..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className={`pl-10 pr-4 py-2 w-full ${currentTheme.bg} ${currentTheme.text} border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500`}
-                    autoFocus
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  size="sm"
-                  className={currentTheme.button}
-                  disabled={!searchQuery.trim()}
-                >
-                  <Search className="w-4 h-4 sm:hidden" />
-                  <span className="hidden sm:inline">Buscar</span>
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className={`${currentTheme.text} ${currentTheme.hover}`}
-                  onClick={() => {
-                    setIsSearchOpen(false);
-                    setSearchQuery('');
-                  }}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </form>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Cart Sidebar */}
-      <CartSidebar 
-        isOpen={isCartOpen} 
-        onClose={() => setIsCartOpen(false)} 
-      />
-    </nav>
+      </motion.nav>
+    </div>
   );
-});
+};
 
 Navigation.displayName = 'Navigation';
 

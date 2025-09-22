@@ -37,19 +37,39 @@ global.ResizeObserver = vi.fn().mockImplementation(() => ({
 }))
 
 // Mock de localStorage
-const localStorageMock = {
+// Mock de localStorage
+interface StorageMock {
+  getItem: ReturnType<typeof vi.fn>;
+  setItem: ReturnType<typeof vi.fn>;
+  removeItem: ReturnType<typeof vi.fn>;
+  clear: ReturnType<typeof vi.fn>;
+}
+
+const localStorageMock: StorageMock = {
   getItem: vi.fn(),
   setItem: vi.fn(),
   removeItem: vi.fn(),
   clear: vi.fn(),
 }
-global.localStorage = localStorageMock as any
+global.localStorage = localStorageMock as unknown as Storage
 
 // Mock de sessionStorage
-const sessionStorageMock = {
+const sessionStorageMock: StorageMock = {
   getItem: vi.fn(),
   setItem: vi.fn(),
   removeItem: vi.fn(),
   clear: vi.fn(),
 }
-global.sessionStorage = sessionStorageMock as any
+global.sessionStorage = sessionStorageMock as unknown as Storage
+
+// Mock de react-router-dom
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal() as Record<string, unknown>
+  return {
+    ...actual,
+    BrowserRouter: ({ children }: { children: React.ReactNode }) => children,
+    useNavigate: vi.fn(() => vi.fn()),
+    useLocation: vi.fn(() => ({ pathname: '/', search: '', hash: '', state: null })),
+    useParams: vi.fn(() => ({})),
+  }
+})

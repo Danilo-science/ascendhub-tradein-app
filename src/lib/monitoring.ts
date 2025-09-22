@@ -8,7 +8,7 @@ export interface ErrorContext {
   page?: string;
   action?: string;
   deviceInfo?: string;
-  additionalData?: Record<string, any>;
+  additionalData?: Record<string, unknown>;
 }
 
 export interface PerformanceMetric {
@@ -51,7 +51,7 @@ export const initSentry = () => {
 };
 
 // Set user context
-export const setUserContext = (userId: string, email?: string, additionalData?: Record<string, any>) => {
+export const setUserContext = (userId: string, email?: string, additionalData?: Record<string, unknown>) => {
   Sentry.setUser({
     id: userId,
     email: email,
@@ -165,7 +165,7 @@ export const trackAPIError = (endpoint: string, method: string, statusCode: numb
 };
 
 // Track business logic errors
-export const trackBusinessError = (operation: string, errorType: string, details: Record<string, any>, userId?: string) => {
+export const trackBusinessError = (operation: string, errorType: string, details: Record<string, unknown>, userId?: string) => {
   captureMessage(`Business Error: ${operation} - ${errorType}`, 'error', {
     userId,
     action: 'business_error',

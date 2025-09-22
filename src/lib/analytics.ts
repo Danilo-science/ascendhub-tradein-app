@@ -1,8 +1,23 @@
 // Google Analytics 4 Configuration and Event Tracking
+type GtagCommand = 'config' | 'event' | 'js' | 'set';
+type GtagConfigParams = {
+  page_title?: string;
+  page_location?: string;
+  anonymize_ip?: boolean;
+  allow_google_signals?: boolean;
+  [key: string]: unknown;
+};
+type GtagEventParams = {
+  event_category?: string;
+  event_label?: string;
+  value?: number;
+  [key: string]: unknown;
+};
+
 declare global {
   interface Window {
-    gtag: (command: string, targetId: string, config?: any) => void;
-    dataLayer: any[];
+    gtag: (command: GtagCommand, targetId: string | Date, params?: GtagConfigParams | GtagEventParams) => void;
+    dataLayer: unknown[];
   }
 }
 
@@ -38,11 +53,11 @@ export const initGA = (measurementId: string) => {
 
   // Initialize dataLayer
   window.dataLayer = window.dataLayer || [];
-  window.gtag = function() {
-    window.dataLayer.push(arguments);
+  window.gtag = function(command: GtagCommand, targetId: string | Date, params?: GtagConfigParams | GtagEventParams) {
+    window.dataLayer.push([command, targetId, params]);
   };
 
-  window.gtag('js', new Date() as any);
+  window.gtag('js', new Date());
   window.gtag('config', measurementId, {
     page_title: document.title,
     page_location: window.location.href,
@@ -190,8 +205,17 @@ const getValueRange = (value: number): string => {
   return '1200+';
 };
 
+export interface PurchaseItem {
+  item_id: string;
+  item_name: string;
+  category: string;
+  quantity: number;
+  price: number;
+  value: number;
+}
+
 // Enhanced ecommerce tracking for trade-in flow
-export const trackPurchaseBegin = (items: any[]) => {
+export const trackPurchaseBegin = (items: PurchaseItem[]) => {
   if (typeof window === 'undefined' || !window.gtag) return;
 
   window.gtag('event', 'begin_checkout', {
@@ -202,7 +226,7 @@ export const trackPurchaseBegin = (items: any[]) => {
   });
 };
 
-export const trackPurchaseComplete = (transactionId: string, value: number, items: any[]) => {
+export const trackPurchaseComplete = (transactionId: string, value: number, items: PurchaseItem[]) => {
   if (typeof window === 'undefined' || !window.gtag) return;
 
   window.gtag('event', 'purchase', {

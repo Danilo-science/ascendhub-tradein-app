@@ -99,7 +99,18 @@ export interface ValidationResult {
   errors: string[];
 }
 
-export const validateTradeInForm = (data: any): ValidationResult => {
+export const validateTradeInForm = (data: {
+  categoria?: string;
+  marca?: string;
+  modelo?: string;
+  nombre?: string;
+  email?: string;
+  telefono?: string;
+  ciudad?: string;
+  descripcionAdicional?: string;
+  imagenes?: File[];
+  [key: string]: unknown;
+}): ValidationResult => {
   const errors: string[] = [];
   
   // Validar campos requeridos

@@ -1,99 +1,193 @@
-import { NextAuthOptions } from 'next-auth';
-import GoogleProvider from 'next-auth/providers/google';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import { SupabaseAdapter } from '@auth/supabase-adapter';
 import { supabase } from '@/integrations/supabase/client';
+import { AuthError, User, Session } from '@supabase/supabase-js';
 
-export const authOptions: NextAuthOptions = {
-  adapter: SupabaseAdapter({
-    url: process.env.VITE_SUPABASE_URL!,
-    secret: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  }),
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-    CredentialsProvider({
-      name: 'credentials',
-      credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' }
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
+// Tipos para autenticación
+export interface AuthResponse {
+  user: User | null;
+  session: Session | null;
+  error: AuthError | null;
+}
 
-        try {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email: credentials.email,
-            password: credentials.password,
-          });
+export interface SignUpData {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+}
 
-          if (error || !data.user) {
-            return null;
-          }
+export interface SignInData {
+  email: string;
+  password: string;
+}
 
-          return {
-            id: data.user.id,
-            email: data.user.email,
-            name: data.user.user_metadata?.full_name || data.user.email,
-            image: data.user.user_metadata?.avatar_url,
-          };
-        } catch (error) {
-          console.error('Auth error:', error);
-          return null;
-        }
-      }
-    })
-  ],
-  session: {
-    strategy: 'jwt',
+// Funciones de autenticación con email/password
+export const authService = {
+  // Registro con email y contraseña
+  async signUp({ email, password, firstName, lastName, fullName }: SignUpData): Promise<AuthResponse> {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            full_name: fullName || `${firstName || ''} ${lastName || ''}`.trim(),
+            avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+          },
+        },
+      });
+
+      return { user: data.user, session: data.session, error };
+    } catch (error) {
+      console.error('Sign up error:', error);
+      return { user: null, session: null, error: error as AuthError };
+    }
   },
-  callbacks: {
-    async jwt({ token, user, account }) {
-      if (user) {
-        token.id = user.id;
-      }
-      
-      if (account?.provider === 'google') {
-        // Sincronizar con Supabase cuando se autentica con Google
-        const { data, error } = await supabase.auth.signInWithIdToken({
-          provider: 'google',
-          token: account.id_token!,
-        });
-        
-        if (!error && data.user) {
-          token.supabaseId = data.user.id;
-        }
-      }
-      
-      return token;
-    },
-    async session({ session, token }) {
-      if (token && session.user) {
-        (session.user as { id?: string; supabaseId?: string }).id = token.id as string;
-        (session.user as { id?: string; supabaseId?: string }).supabaseId = token.supabaseId as string;
-      }
-      return session;
-    },
+
+  // Inicio de sesión con email y contraseña
+  async signIn({ email, password }: SignInData): Promise<AuthResponse> {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      return { user: data.user, session: data.session, error };
+    } catch (error) {
+      console.error('Sign in error:', error);
+      return { user: null, session: null, error: error as AuthError };
+    }
   },
-  pages: {
-    signIn: '/auth/signin',
-    error: '/auth/error',
+
+  // Inicio de sesión con Google OAuth
+  async signInWithGoogle(): Promise<AuthResponse> {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      return { user: null, session: null, error };
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      return { user: null, session: null, error: error as AuthError };
+    }
   },
-  secret: process.env.NEXTAUTH_SECRET,
+
+  // Cerrar sesión
+  async signOut(): Promise<{ error: AuthError | null }> {
+    try {
+      const { error } = await supabase.auth.signOut();
+      return { error };
+    } catch (error) {
+      console.error('Sign out error:', error);
+      return { error: error as AuthError };
+    }
+  },
+
+  // Obtener sesión actual
+  async getCurrentSession(): Promise<{ session: Session | null; error: AuthError | null }> {
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      return { session: data.session, error };
+    } catch (error) {
+      console.error('Get session error:', error);
+      return { session: null, error: error as AuthError };
+    }
+  },
+
+  // Obtener usuario actual
+  async getCurrentUser(): Promise<{ user: User | null; error: AuthError | null }> {
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      return { user: data.user, error };
+    } catch (error) {
+      console.error('Get user error:', error);
+      return { user: null, error: error as AuthError };
+    }
+  },
+
+  // Resetear contraseña
+  async resetPassword(email: string): Promise<{ error: AuthError | null }> {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+      return { error };
+    } catch (error) {
+      console.error('Reset password error:', error);
+      return { error: error as AuthError };
+    }
+  },
+
+  // Actualizar contraseña
+  async updatePassword(password: string): Promise<{ error: AuthError | null }> {
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      return { error };
+    } catch (error) {
+      console.error('Update password error:', error);
+      return { error: error as AuthError };
+    }
+  },
+
+  // Actualizar perfil de usuario
+  async updateProfile(updates: { 
+    email?: string; 
+    data?: { 
+      first_name?: string; 
+      last_name?: string; 
+      full_name?: string; 
+      avatar_url?: string;
+      phone?: string;
+      dateOfBirth?: string;
+      address?: string;
+    } 
+  }): Promise<{ error: AuthError | null }> {
+    try {
+      const { error } = await supabase.auth.updateUser(updates);
+      return { error };
+    } catch (error) {
+      console.error('Update profile error:', error);
+      return { error: error as AuthError };
+    }
+  },
 };
 
-// Función helper para obtener la sesión del servidor
-export async function getServerSession() {
-  // Esta función se implementará cuando se configure el servidor NextAuth
-  return null;
-}
+// Utilidades para manejo de errores de autenticación
+export const getAuthErrorMessage = (error: AuthError | null): string => {
+  if (!error) return '';
 
-// Función helper para el cliente
-export function useSession() {
-  // Esta función se implementará con el hook de NextAuth
-  return { data: null, status: 'loading' };
-}
+  switch (error.message) {
+    case 'Invalid login credentials':
+      return 'Credenciales de inicio de sesión inválidas';
+    case 'User already registered':
+      return 'El usuario ya está registrado';
+    case 'Email not confirmed':
+      return 'Email no confirmado. Revisa tu bandeja de entrada';
+    case 'Password should be at least 6 characters':
+      return 'La contraseña debe tener al menos 6 caracteres';
+    case 'Invalid email':
+      return 'Email inválido';
+    case 'Signup requires a valid password':
+      return 'El registro requiere una contraseña válida';
+    default:
+      return error.message || 'Ha ocurrido un error inesperado';
+  }
+};
+
+// Hook personalizado para autenticación
+export const useSupabaseAuth = () => {
+  return {
+    ...authService,
+    getErrorMessage: getAuthErrorMessage,
+  };
+};

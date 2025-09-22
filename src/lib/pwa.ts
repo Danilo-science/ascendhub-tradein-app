@@ -1,5 +1,18 @@
 // Utilidades para PWA y Service Worker
-export interface PWAInstallPrompt {
+
+// Extend Navigator interface to include standalone property
+declare global {
+  interface Navigator {
+    standalone?: boolean;
+  }
+}
+
+export interface PWAInstallPrompt extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+export interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
@@ -10,10 +23,10 @@ export interface PWAUpdateAvailable {
 }
 
 class PWAManager {
-  private deferredPrompt: PWAInstallPrompt | null = null;
+  private deferredPrompt: BeforeInstallPromptEvent | null = null;
   private updateAvailable: PWAUpdateAvailable | null = null;
   private callbacks: {
-    onInstallPrompt?: (prompt: PWAInstallPrompt) => void;
+    onInstallPrompt?: (prompt: BeforeInstallPromptEvent) => void;
     onUpdateAvailable?: (update: PWAUpdateAvailable) => void;
     onInstalled?: () => void;
     onOffline?: () => void;
@@ -94,9 +107,9 @@ class PWAManager {
 
   private setupEventListeners() {
     // Evento de instalación PWA
-    window.addEventListener('beforeinstallprompt', (e) => {
+    window.addEventListener('beforeinstallprompt', (e: Event) => {
       e.preventDefault();
-      this.deferredPrompt = e as any;
+      this.deferredPrompt = e as BeforeInstallPromptEvent;
       
       if (this.callbacks.onInstallPrompt) {
         this.callbacks.onInstallPrompt(this.deferredPrompt);
@@ -181,14 +194,14 @@ class PWAManager {
 
   public isPWA(): boolean {
     return window.matchMedia('(display-mode: standalone)').matches ||
-           (window.navigator as any).standalone === true;
+           window.navigator.standalone === true;
   }
 
-  public getInstallPrompt(): PWAInstallPrompt | null {
+  public getInstallPrompt(): BeforeInstallPromptEvent | null {
     return this.deferredPrompt;
   }
 
-  public onInstallPrompt(callback: (prompt: PWAInstallPrompt) => void): void {
+  public onInstallPrompt(callback: (prompt: BeforeInstallPromptEvent) => void): void {
     this.callbacks.onInstallPrompt = callback;
   }
 

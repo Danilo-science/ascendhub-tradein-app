@@ -289,13 +289,13 @@ export default function Cart() {
                       {activeItems.map((item) => (
                         <div key={item.product.id} className="flex items-center space-x-4 p-4 border rounded-lg">
                           <img
-                            src={item.product.image}
-                            alt={item.product.name}
+                            src={item.product.images?.[0] || ''}
+                            alt={item.product.title}
                             className="w-16 h-16 object-cover rounded-md"
                           />
                           <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900">{item.product.name}</h3>
-                            <p className="text-sm text-gray-600">{item.product.category}</p>
+                            <h3 className="font-semibold text-gray-900">{item.product.title}</h3>
+                            <p className="text-sm text-gray-600">{item.product.brand || 'Sin categoría'}</p>
                             <p className="text-lg font-bold text-brand-blue">${item.product.price.toLocaleString()}</p>
                             {item.addedAt && (
                               <p className="text-xs text-gray-500">
@@ -357,8 +357,18 @@ export default function Cart() {
                   <Card>
                     <CardHeader>
                       <CardTitle 
+                        role="button"
+                        tabIndex={0}
                         className="flex items-center cursor-pointer"
                         onClick={() => setShowSavedItems(!showSavedItems)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setShowSavedItems(!showSavedItems);
+                          }
+                        }}
+                        aria-label={`${showSavedItems ? 'Ocultar' : 'Mostrar'} productos guardados para más tarde`}
+                        aria-expanded={showSavedItems}
                       >
                         Guardados para más tarde ({savedItems.length})
                         <Badge variant="secondary" className="ml-2">Guardados</Badge>
@@ -369,13 +379,13 @@ export default function Cart() {
                         {savedItems.map((item) => (
                           <div key={item.product.id} className="flex items-center space-x-4 p-4 border rounded-lg bg-gray-50">
                             <img
-                              src={item.product.image}
-                              alt={item.product.name}
+                              src={item.product.images?.[0] || ''}
+                              alt={item.product.title}
                               className="w-16 h-16 object-cover rounded-md"
                             />
                             <div className="flex-1">
-                              <h3 className="font-semibold text-gray-900">{item.product.name}</h3>
-                              <p className="text-sm text-gray-600">{item.product.category}</p>
+                              <h3 className="font-semibold text-gray-900">{item.product.title}</h3>
+                              <p className="text-sm text-gray-600">{item.product.brand || 'Sin categoría'}</p>
                               <p className="text-lg font-bold text-brand-blue">${item.product.price.toLocaleString()}</p>
                             </div>
                             <div className="flex space-x-2">
@@ -529,8 +539,17 @@ export default function Cart() {
                     <Label>Método de Envío</Label>
                     <div className="space-y-3 mt-2">
                       <div 
+                        role="button"
+                        tabIndex={0}
                         className={`p-4 border rounded-lg cursor-pointer ${state.shipping.method === 'standard' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
                         onClick={() => updateShippingMethod('standard', 0, 5)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            updateShippingMethod('standard', 0, 5);
+                          }
+                        }}
+                        aria-label="Seleccionar envío estándar gratuito"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
@@ -545,8 +564,17 @@ export default function Cart() {
                       </div>
                       
                       <div 
+                        role="button"
+                        tabIndex={0}
                         className={`p-4 border rounded-lg cursor-pointer ${state.shipping.method === 'express' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
                         onClick={() => updateShippingMethod('express', 15000, 2)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            updateShippingMethod('express', 15000, 2);
+                          }
+                        }}
+                        aria-label="Seleccionar envío express por $15.000"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
@@ -574,8 +602,17 @@ export default function Cart() {
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
                     <div 
+                      role="button"
+                      tabIndex={0}
                       className={`p-4 border rounded-lg cursor-pointer ${paymentInfo.method === 'credit_card' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
                       onClick={() => setPaymentInfo({...paymentInfo, method: 'credit_card'})}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setPaymentInfo({...paymentInfo, method: 'credit_card'});
+                        }
+                      }}
+                      aria-label="Seleccionar tarjeta de crédito o débito"
                     >
                       <div className="flex items-center">
                         <CreditCard className="h-5 w-5 mr-3 text-gray-600" />
@@ -584,8 +621,17 @@ export default function Cart() {
                     </div>
                     
                     <div 
+                      role="button"
+                      tabIndex={0}
                       className={`p-4 border rounded-lg cursor-pointer ${paymentInfo.method === 'mercadopago' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
                       onClick={() => setPaymentInfo({...paymentInfo, method: 'mercadopago'})}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setPaymentInfo({...paymentInfo, method: 'mercadopago'});
+                        }
+                      }}
+                      aria-label="Seleccionar MercadoPago"
                     >
                       <div className="flex items-center">
                         <div className="w-5 h-5 mr-3 bg-blue-500 rounded"></div>
@@ -655,9 +701,9 @@ export default function Cart() {
                     {activeItems.map((item) => (
                       <div key={item.product.id} className="flex items-center justify-between py-2">
                         <div className="flex items-center space-x-3">
-                          <img src={item.product.image} alt={item.product.name} className="w-12 h-12 object-cover rounded" />
+                          <img src={item.product.images?.[0] || ''} alt={item.product.title} className="w-12 h-12 object-cover rounded" />
                           <div>
-                            <p className="font-medium">{item.product.name}</p>
+                            <p className="font-medium">{item.product.title}</p>
                             <p className="text-sm text-gray-600">Cantidad: {item.quantity}</p>
                           </div>
                         </div>

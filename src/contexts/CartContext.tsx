@@ -2,15 +2,23 @@ import React, { createContext, useContext, useReducer, ReactNode, useEffect, use
 
 export interface Product {
   id: string;
-  name: string;
-  brand: string;
-  model: string;
+  title: string;
+  slug: string;
+  description?: string;
+  short_description?: string;
   price: number;
-  originalPrice?: number;
-  image: string;
-  category: 'apple' | 'electronica';
-  specifications: Record<string, string>;
-  inStock: boolean;
+  original_price?: number;
+  category_id?: string;
+  brand?: string;
+  model?: string;
+  specs?: Record<string, string | number | boolean>;
+  images: string[];
+  status: 'active' | 'inactive' | 'out_of_stock';
+  condition: 'new' | 'used' | 'refurbished';
+  stock_quantity: number;
+  featured: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface TradeInDevice {
@@ -661,7 +669,7 @@ export function useCartActions() {
       payload: { 
         notification: { 
           type: 'success', 
-          message: `${product.name} agregado al carrito`,
+          message: `${product.title} agregado al carrito`,
           autoHide: true,
           duration: 3000
         } 
@@ -765,7 +773,7 @@ export function useCartActions() {
       payload: { 
         notification: { 
           type: 'success', 
-          message: `${product.name} agregado a favoritos`,
+          message: `${product.title} agregado a favoritos`,
           autoHide: true,
           duration: 3000
         } 
@@ -792,7 +800,7 @@ export function useCartActions() {
       payload: { 
         notification: { 
           type: 'info', 
-          message: `${product.name} agregado a comparación`,
+          message: `${product.title} agregado a comparación`,
           autoHide: true,
           duration: 3000
         } 
@@ -870,18 +878,45 @@ export function useCartActions() {
   };
 
   // Convert EnhancedProduct to Product for cart compatibility
-  const addToCart = (product: any, quantity = 1) => {
+  const addToCart = (product: {
+    id: string;
+    title?: string;
+    brand?: string;
+    model?: string;
+    price: number;
+    original_price?: number;
+    images?: string[];
+    specs?: Record<string, string | number | boolean>;
+    stock_quantity?: number;
+    slug?: string;
+    description?: string;
+    short_description?: string;
+    category_id?: string;
+    status?: 'active' | 'inactive' | 'out_of_stock';
+    condition?: 'new' | 'used' | 'refurbished';
+    featured?: boolean;
+    created_at?: string;
+    updated_at?: string;
+  }, quantity = 1) => {
     const cartProduct: Product = {
       id: product.id,
-      name: product.title,
-      brand: product.brand || '',
-      model: product.model || '',
+      title: product.title || '',
+      slug: product.slug || '',
+      description: product.description,
+      short_description: product.short_description,
       price: product.price,
-      originalPrice: product.original_price,
-      image: product.images?.[0] || '',
-      category: product.brand?.toLowerCase() === 'apple' ? 'apple' : 'electronica',
-      specifications: product.specs || {},
-      inStock: product.stock_quantity > 0
+      original_price: product.original_price,
+      category_id: product.category_id,
+      brand: product.brand,
+      model: product.model,
+      specs: product.specs,
+      images: product.images || [],
+      status: product.status || 'active',
+      condition: product.condition || 'new',
+      stock_quantity: product.stock_quantity || 0,
+      featured: product.featured || false,
+      created_at: product.created_at || new Date().toISOString(),
+      updated_at: product.updated_at || new Date().toISOString(),
     };
     addItem(cartProduct, quantity);
   };

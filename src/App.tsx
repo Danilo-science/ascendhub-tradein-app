@@ -4,7 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
-import { AuthProvider } from "@/hooks/useAuth";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { lazy, Suspense, memo } from "react";
 import PWAInstallBanner from "./components/PWAInstallBanner";
 import PWAUpdateNotification from "./components/PWAUpdateNotification";
@@ -36,6 +38,9 @@ const Admin = lazy(() =>
 );
 const Auth = lazy(() => 
   import("./pages/Auth").then(module => ({ default: module.default }))
+);
+const Profile = lazy(() => 
+  import("./pages/Profile").then(module => ({ default: module.default }))
 );
 const SearchResults = lazy(() => 
   import("./pages/SearchResults").then(module => ({ default: module.default }))
@@ -94,18 +99,20 @@ OptimizedRoute.displayName = 'OptimizedRoute';
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <CartProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter
-            future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true,
-            }}
-          >
+    <ThemeProvider>
+      <TooltipProvider>
+        <AuthProvider>
+          <CartProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter
+              future={{
+                v7_startTransition: true,
+                v7_relativeSplatPath: true,
+              }}
+            >
             <Routes>
+              {/* Rutas públicas */}
               <Route path="/" element={<OptimizedRoute element={<Index />} />} />
               <Route path="/apple" element={<OptimizedRoute element={<Apple />} />} />
               <Route path="/electronics" element={<OptimizedRoute element={<Electronics />} />} />
@@ -124,16 +131,45 @@ const App = () => (
               <Route path="/carrito" element={<OptimizedRoute element={<Cart />} />} />
               <Route path="/cart" element={<OptimizedRoute element={<Cart />} />} />
               <Route path="/test-cart" element={<OptimizedRoute element={<TestCart />} />} />
-              <Route path="/checkout" element={
-                <div className="pt-16 p-8 text-center">
-                  <h1 className="text-2xl font-bold">Checkout - En construcción</h1>
-                </div>
+              
+              {/* Rutas de autenticación - solo para usuarios no autenticados */}
+              <Route path="/auth" element={
+                <ProtectedRoute requireAuth={false}>
+                  <OptimizedRoute element={<Auth />} />
+                </ProtectedRoute>
               } />
-              <Route path="/dashboard" element={<OptimizedRoute element={<Dashboard />} />} />
+              
+              {/* Rutas protegidas - requieren autenticación */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <OptimizedRoute element={<Dashboard />} />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <OptimizedRoute element={<Profile />} />
+                </ProtectedRoute>
+              } />
               <Route path="/trade-in" element={<OptimizedRoute element={<TradeIn />} />} />
-              <Route path="/parte-de-pago" element={<OptimizedRoute element={<TradeIn />} />} />
-              <Route path="/admin" element={<OptimizedRoute element={<Admin />} />} />
-              <Route path="/auth" element={<OptimizedRoute element={<Auth />} />} />
+              <Route path="/parte-de-pago" element={
+                <ProtectedRoute>
+                  <OptimizedRoute element={<TradeIn />} />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <OptimizedRoute element={<Admin />} />
+                </ProtectedRoute>
+              } />
+              <Route path="/checkout" element={
+                <ProtectedRoute>
+                  <div className="pt-16 p-8 text-center">
+                    <h1 className="text-2xl font-bold">Checkout - En construcción</h1>
+                  </div>
+                </ProtectedRoute>
+              } />
+              
+              {/* Ruta 404 */}
               <Route path="*" element={<OptimizedRoute element={<NotFound />} />} />
             </Routes>
             
@@ -144,6 +180,7 @@ const App = () => (
         </CartProvider>
       </AuthProvider>
     </TooltipProvider>
+  </ThemeProvider>
   </QueryClientProvider>
 );
 

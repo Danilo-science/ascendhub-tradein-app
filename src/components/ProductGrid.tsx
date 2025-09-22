@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, memo, useCallback } from 'react';
 import { Search, Filter, Grid, List, ChevronDown, X, SlidersHorizontal } from 'lucide-react';
+import { motion } from 'motion/react';
 import { EnhancedProduct, ProductFilters, ProductSortOption } from '@/types';
 import { ProductCard } from './ProductCard';
 import { Button } from '@/components/ui/button';
@@ -133,124 +134,130 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   const styles = getSectionStyles();
 
   const renderFilters = () => (
-    <Card className="h-fit">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <SlidersHorizontal className="w-5 h-5" />
-            Filtros
-          </span>
-          {Object.keys(filters).length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="text-red-500 hover:text-red-700"
-            >
-              <X className="w-4 h-4 mr-1" />
-              Limpiar
-            </Button>
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <Card className="h-fit bg-white/10 backdrop-blur-md border border-white/20 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <SlidersHorizontal className="w-5 h-5" />
+              Filtros
+            </span>
+            {Object.keys(filters).length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="text-red-500 hover:text-red-700 hover:bg-red-50/50"
+              >
+                <X className="w-4 h-4 mr-1" />
+                Limpiar
+              </Button>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Búsqueda */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">Buscar</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Buscar productos..."
+                value={filters.search || ''}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
+                className="pl-10 bg-white/20 backdrop-blur-sm border-white/30"
+              />
+            </div>
+          </div>
+
+          {/* Categorías */}
+          {categories.length > 1 && (
+            <div>
+              <label className="text-sm font-medium mb-2 block">Categoría</label>
+              <Select
+                value={filters.category || ''}
+                onValueChange={(value) => handleFilterChange('category', value || undefined)}
+              >
+                <SelectTrigger className="bg-white/20 backdrop-blur-sm border-white/30">
+                  <SelectValue placeholder="Todas las categorías" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas las categorías</SelectItem>
+                  {categories.map(category => (
+                    <SelectItem key={category} value={category}>
+                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Búsqueda */}
-        <div>
-          <label className="text-sm font-medium mb-2 block">Buscar</label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              placeholder="Buscar productos..."
-              value={filters.search || ''}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
 
-        {/* Categorías */}
-        {categories.length > 1 && (
+          {/* Marcas */}
+          {brands.length > 1 && (
+            <div>
+              <label className="text-sm font-medium mb-2 block">Marca</label>
+              <Select
+                value={filters.brand || ''}
+                onValueChange={(value) => handleFilterChange('brand', value || undefined)}
+              >
+                <SelectTrigger className="bg-white/20 backdrop-blur-sm border-white/30">
+                  <SelectValue placeholder="Todas las marcas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas las marcas</SelectItem>
+                  {brands.map(brand => (
+                    <SelectItem key={brand} value={brand}>
+                      {brand}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Rango de precios */}
           <div>
-            <label className="text-sm font-medium mb-2 block">Categoría</label>
-            <Select
-              value={filters.category || ''}
-              onValueChange={(value) => handleFilterChange('category', value || undefined)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todas las categorías" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Todas las categorías</SelectItem>
-                {categories.map(category => (
-                  <SelectItem key={category} value={category}>
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {/* Marcas */}
-        {brands.length > 1 && (
-          <div>
-            <label className="text-sm font-medium mb-2 block">Marca</label>
-            <Select
-              value={filters.brand || ''}
-              onValueChange={(value) => handleFilterChange('brand', value || undefined)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todas las marcas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Todas las marcas</SelectItem>
-                {brands.map(brand => (
-                  <SelectItem key={brand} value={brand}>
-                    {brand}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {/* Rango de precios */}
-        <div>
-          <label className="text-sm font-medium mb-2 block">
-            Precio: ${priceRange[0]} - ${priceRange[1]}
-          </label>
-          <Slider
-            value={priceRange}
-            onValueChange={(value) => setPriceRange(value as [number, number])}
-            min={priceExtent[0]}
-            max={priceExtent[1]}
-            step={50}
-            className="w-full"
-          />
-        </div>
-
-        {/* Filtros adicionales */}
-        <div className="space-y-3">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="inStock"
-              checked={filters.inStock || false}
-              onCheckedChange={(checked) => handleFilterChange('inStock', checked)}
+            <label className="text-sm font-medium mb-2 block">
+              Precio: ${priceRange[0]} - ${priceRange[1]}
+            </label>
+            <Slider
+              value={priceRange}
+              onValueChange={(value) => setPriceRange(value as [number, number])}
+              min={priceExtent[0]}
+              max={priceExtent[1]}
+              step={50}
+              className="w-full"
             />
-            <label htmlFor="inStock" className="text-sm">Solo en stock</label>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="featured"
-              checked={filters.featured || false}
-              onCheckedChange={(checked) => handleFilterChange('featured', checked)}
-            />
-            <label htmlFor="featured" className="text-sm">Solo destacados</label>
+
+          {/* Filtros adicionales */}
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="inStock"
+                checked={filters.inStock || false}
+                onCheckedChange={(checked) => handleFilterChange('inStock', checked)}
+              />
+              <label htmlFor="inStock" className="text-sm">Solo en stock</label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="featured"
+                checked={filters.featured || false}
+                onCheckedChange={(checked) => handleFilterChange('featured', checked)}
+              />
+              <label htmlFor="featured" className="text-sm">Solo destacados</label>
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 
   const renderPagination = () => {
@@ -270,11 +277,17 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
     }
 
     return (
-      <div className="flex items-center justify-center gap-2 mt-8">
+      <motion.div 
+        className="flex items-center justify-center gap-2 mt-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <Button
           variant="outline"
           onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
           disabled={currentPage === 1}
+          className="bg-white/10 backdrop-blur-sm border-white/30 hover:bg-white/20"
         >
           Anterior
         </Button>
@@ -284,10 +297,11 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
             <Button
               variant={currentPage === 1 ? 'default' : 'outline'}
               onClick={() => setCurrentPage(1)}
+              className="bg-white/10 backdrop-blur-sm border-white/30 hover:bg-white/20"
             >
               1
             </Button>
-            {startPage > 2 && <span className="px-2">...</span>}
+            {startPage > 2 && <span className="px-2 text-gray-400">...</span>}
           </>
         )}
 
@@ -296,6 +310,10 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
             key={page}
             variant={currentPage === page ? 'default' : 'outline'}
             onClick={() => setCurrentPage(page)}
+            className={currentPage === page 
+              ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg" 
+              : "bg-white/10 backdrop-blur-sm border-white/30 hover:bg-white/20"
+            }
           >
             {page}
           </Button>
@@ -303,10 +321,14 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
 
         {endPage < totalPages && (
           <>
-            {endPage < totalPages - 1 && <span className="px-2">...</span>}
+            {endPage < totalPages - 1 && <span className="px-2 text-gray-400">...</span>}
             <Button
               variant={currentPage === totalPages ? 'default' : 'outline'}
               onClick={() => setCurrentPage(totalPages)}
+              className={currentPage === totalPages 
+                ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg" 
+                : "bg-white/10 backdrop-blur-sm border-white/30 hover:bg-white/20"
+              }
             >
               {totalPages}
             </Button>
@@ -317,10 +339,11 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
           variant="outline"
           onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
           disabled={currentPage === totalPages}
+          className="bg-white/10 backdrop-blur-sm border-white/30 hover:bg-white/20"
         >
           Siguiente
         </Button>
-      </div>
+      </motion.div>
     );
   };
 
@@ -450,9 +473,19 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         )}
 
         {/* Grid de productos */}
-        <div className="flex-1">
+        <motion.div 
+          className="flex-1"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
           {paginatedProducts.length === 0 ? (
-            <div className="text-center py-12">
+            <motion.div 
+              className="text-center py-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg shadow-lg"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+            >
               <div className="text-gray-400 mb-4">
                 <Search className="w-16 h-16 mx-auto" />
               </div>
@@ -465,29 +498,49 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
               <Button onClick={clearFilters} variant="outline">
                 Limpiar filtros
               </Button>
-            </div>
+            </motion.div>
           ) : (
             <>
-              <div
+              <motion.div
                 className={
                   viewMode === 'grid'
                     ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6'
                     : 'space-y-4'
                 }
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
               >
-                {paginatedProducts.map(product => (
-                  <ProductCard
+                {paginatedProducts.map((product, index) => (
+                  <motion.div
                     key={product.id}
-                    product={product}
-                    section={section}
-                    variant={viewMode}
-                  />
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ 
+                      duration: 0.4, 
+                      delay: index * 0.1,
+                      ease: "easeOut"
+                    }}
+                    whileHover={{ y: -5 }}
+                  >
+                    <ProductCard
+                      product={product}
+                      section={section}
+                      variant={viewMode}
+                    />
+                  </motion.div>
                 ))}
-              </div>
-              {renderPagination()}
+              </motion.div>
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+              >
+                {renderPagination()}
+              </motion.div>
             </>
           )}
-        </div>
+        </motion.div>
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ const mockServiceWorker = {
     update: vi.fn(),
     unregister: vi.fn(),
     addEventListener: vi.fn(),
+    showNotification: vi.fn(),
   }),
 };
 
