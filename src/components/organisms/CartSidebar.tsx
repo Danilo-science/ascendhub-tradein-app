@@ -1,4 +1,3 @@
-import React from 'react';
 import { useCart, useCartActions } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -94,12 +93,12 @@ export function CartSidebar() {
                 {state.items.map((item) => (
                   <div key={`${item.product.id}-${JSON.stringify(item.selectedSpecs)}`} className="flex gap-3 p-3 border rounded-lg">
                     <img
-                      src={item.product.image}
-                      alt={item.product.name}
+                      src={item.product.images[0] || '/placeholder.svg'}
+                      alt={item.product.title}
                       className="w-16 h-16 object-cover rounded-md"
                     />
                     <div className="flex-1">
-                      <h4 className="font-medium text-sm">{item.product.name}</h4>
+                      <h4 className="font-medium text-sm">{item.product.title}</h4>
                       <p className="text-xs text-gray-500">{item.product.brand} {item.product.model}</p>
                       
                       {/* Selected Specifications */}
@@ -136,9 +135,9 @@ export function CartSidebar() {
                         
                         <div className="text-right">
                           <p className="text-sm font-medium">{formatPrice(item.product.price * item.quantity)}</p>
-                          {item.product.originalPrice && (
+                          {item.product.original_price && (
                             <p className="text-xs text-gray-500 line-through">
-                              {formatPrice(item.product.originalPrice * item.quantity)}
+                              {formatPrice(item.product.original_price * item.quantity)}
                             </p>
                           )}
                         </div>

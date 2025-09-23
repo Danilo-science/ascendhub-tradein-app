@@ -5,6 +5,7 @@ import { AuthProvider } from '../AuthProvider';
 import { useAuth } from '@/hooks/useAuthContext';
 import { authService } from '@/lib/auth';
 import { User, Session, AuthError } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 // Helper function to create mock User
 const createMockUser = (id: string, email: string): User => ({
@@ -51,11 +52,17 @@ vi.mock('@/lib/auth', () => ({
   },
 }));
 
-// Mock de Supabase client
+// Mock de Supabase
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     auth: {
-      getSession: vi.fn(),
+      getSession: vi.fn(() => Promise.resolve({
+        data: { session: null },
+        error: null
+      })),
+      signOut: vi.fn(() => Promise.resolve({
+        error: null
+      })),
       onAuthStateChange: vi.fn(() => ({
         data: { subscription: { unsubscribe: vi.fn() } },
       })),
@@ -97,9 +104,10 @@ describe('AuthProvider', () => {
     const mockUser = createMockUser('1', 'test@example.com');
     const mockSession = createMockSession(mockUser);
 
-    vi.mocked(authService.getCurrentSession).mockResolvedValue({
-      session: mockSession,
-      error: null,
+    // Mock Supabase getSession to return the session
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: mockSession },
+      error: null
     });
 
     render(
@@ -130,7 +138,12 @@ describe('AuthProvider', () => {
     });
 
     vi.mocked(authService.signIn).mockResolvedValue({
-      user: mockUser,
+      user: {
+        id: mockUser.id,
+        email: mockUser.email,
+        name: mockUser.user_metadata?.name,
+        avatar_url: mockUser.user_metadata?.avatar_url,
+      },
       session: mockSession,
       error: null,
     });
@@ -167,7 +180,12 @@ describe('AuthProvider', () => {
     });
 
     vi.mocked(authService.signUp).mockResolvedValue({
-      user: mockUser,
+      user: {
+        id: mockUser.id,
+        email: mockUser.email,
+        name: mockUser.user_metadata?.name,
+        avatar_url: mockUser.user_metadata?.avatar_url,
+      },
       session: mockSession,
       error: null,
     });
@@ -196,15 +214,8 @@ describe('AuthProvider', () => {
   });
 
   it('should handle sign out', async () => {
-    const mockUser = createMockUser('1', 'test@example.com');
-    const mockSession = createMockSession(mockUser);
-
     vi.mocked(authService.getCurrentSession).mockResolvedValue({
-      session: mockSession,
-      error: null,
-    });
-
-    vi.mocked(authService.signOut).mockResolvedValue({
+      session: null,
       error: null,
     });
 
@@ -224,7 +235,7 @@ describe('AuthProvider', () => {
       signOutButton.click();
     });
 
-    expect(authService.signOut).toHaveBeenCalled();
+    expect(supabase.auth.signOut).toHaveBeenCalled();
   });
 
   it('should handle Google sign in', async () => {

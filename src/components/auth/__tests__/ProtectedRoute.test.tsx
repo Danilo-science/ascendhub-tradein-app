@@ -2,12 +2,12 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { User } from '@supabase/supabase-js';
+import { AuthUser } from '@/lib/auth';
 import ProtectedRoute from '../ProtectedRoute';
 import { useAuth } from '@/hooks/useAuthContext';
 
 // Mock del hook useAuth
-vi.mock('../AuthProvider', () => ({
+vi.mock('@/hooks/useAuthContext', () => ({
   useAuth: vi.fn(),
 }));
 
@@ -25,13 +25,10 @@ vi.mock('react-router-dom', async () => {
 const TestComponent = () => <div data-testid="protected-content">Protected Content</div>;
 
 // Mock de usuario completo
-const createMockUser = (overrides: Partial<User> = {}): User => ({
+const createMockUser = (overrides: Partial<AuthUser> = {}): AuthUser => ({
   id: '1',
   email: 'test@example.com',
-  app_metadata: {},
-  user_metadata: {},
-  aud: 'authenticated',
-  created_at: '2023-01-01T00:00:00.000Z',
+  name: 'Test User',
   ...overrides,
 });
 

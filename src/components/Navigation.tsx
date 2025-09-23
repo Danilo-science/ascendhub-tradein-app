@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Menu, X, ShoppingCart, User, Search, Home, Apple, Zap, Users, Mail, RefreshCw } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/hooks/useAuthContext';
-import { useIsMobile } from '@/components/ui/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface NavigationProps {
   className?: string;
 }
 
-const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
+const Navigation: React.FC<NavigationProps> = React.memo(({ className = '' }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
@@ -20,23 +20,26 @@ const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
 
-  const totalItems = state.items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalItems = useMemo(() => 
+    state.items.reduce((sum, item) => sum + item.quantity, 0), 
+    [state.items]
+  );
 
-  const navigationItems = [
+  const navigationItems = useMemo(() => [
     { name: 'Inicio', path: '/', icon: Home },
     { name: 'Apple', path: '/apple', icon: Apple },
     { name: 'Electro', path: '/sell', icon: Zap },
     { name: 'Trade-In', path: '/trade-in', icon: RefreshCw },
-  ];
+  ], []);
 
   // Función para manejar la búsqueda
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setIsMenuOpen(false); // Cerrar menú móvil si está abierto
     }
-  };
+  }, [searchQuery, navigate]);
 
   return (
     <div className={`fixed top-0 left-0 right-0 z-50 ${className}`}>
@@ -351,7 +354,7 @@ const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
       </motion.nav>
     </div>
   );
-};
+});
 
 Navigation.displayName = 'Navigation';
 

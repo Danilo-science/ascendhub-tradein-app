@@ -1,6 +1,7 @@
 // Sentry Configuration and Error Monitoring
-import * as Sentry from '@sentry/react';
 import React from 'react';
+import * as Sentry from '@sentry/react';
+import { ErrorInfo, ReactNode, ComponentType } from 'react';
 
 export interface ErrorContext {
   userId?: string;
@@ -205,7 +206,7 @@ export const ErrorBoundary = Sentry.withErrorBoundary;
 
 // Higher-order component for automatic error tracking
 export const withErrorTracking = <P extends object>(
-  Component: React.ComponentType<P>,
+  Component: ComponentType<P>,
   componentName: string
 ) => {
   return Sentry.withErrorBoundary(Component, {

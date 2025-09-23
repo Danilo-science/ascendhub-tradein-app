@@ -1,15 +1,13 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { CartProvider } from "@/contexts/CartContext";
-import { AuthProvider } from "@/components/auth/AuthProvider";
-import { ThemeProvider } from "@/components/ThemeProvider";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import { lazy, Suspense, memo } from "react";
-import PWAInstallBanner from "./components/PWAInstallBanner";
-import PWAUpdateNotification from "./components/PWAUpdateNotification";
+import React, { Suspense, useEffect, lazy } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/components/auth/AuthProvider';
+import { CartProvider } from '@/contexts/CartContext';
+import { PWAUpdateNotification } from '@/components/PWAUpdateNotification';
+import { PWAInstallBanner } from '@/components/PWAInstallBanner';
+import { TaskGuardian } from '@/lib/guardians/TaskGuardian';
+import { logger } from '@/lib/logger';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Lazy loading de componentes con preload hints
 const Index = lazy(() => 
@@ -18,170 +16,134 @@ const Index = lazy(() =>
 const Apple = lazy(() => 
   import("./pages/Apple").then(module => ({ default: module.default }))
 );
-const Electronics = lazy(() => 
-  import("./pages/Electronics").then(module => ({ default: module.default }))
+const TradeIn = lazy(() => 
+  import("./pages/TradeIn").then(module => ({ default: module.default }))
 );
 const Cart = lazy(() => 
   import("./pages/Cart").then(module => ({ default: module.default }))
 );
-const TestCart = lazy(() => 
-  import("./pages/TestCart").then(module => ({ default: module.default }))
-);
-const Dashboard = lazy(() => 
-  import("./pages/Dashboard").then(module => ({ default: module.default }))
-);
-const TradeIn = lazy(() => 
-  import("./pages/TradeIn").then(module => ({ default: module.default }))
-);
-const Admin = lazy(() => 
-  import("./pages/Admin").then(module => ({ default: module.default }))
-);
-const Auth = lazy(() => 
-  import("./pages/Auth").then(module => ({ default: module.default }))
-);
 const Profile = lazy(() => 
   import("./pages/Profile").then(module => ({ default: module.default }))
 );
-const SearchResults = lazy(() => 
-  import("./pages/SearchResults").then(module => ({ default: module.default }))
+const Auth = lazy(() => 
+  import("./pages/Auth").then(module => ({ default: module.default }))
 );
 const NotFound = lazy(() => 
   import("./pages/NotFound").then(module => ({ default: module.default }))
 );
 
+// Preload crítico de componentes
+const preloadCriticalComponents = () => {
+  // Preload componentes que probablemente se usarán
+  setTimeout(() => {
+    import("./pages/Apple");
+    import("./pages/TradeIn");
+  }, 2000);
+};
+
 // Componente de loading optimizado
-const LoadingSpinner = memo(() => (
-  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-200 border-t-purple-600 mx-auto mb-4"></div>
-      <p className="text-purple-600 font-medium">Cargando...</p>
-    </div>
+const LoadingSpinner = () => (
+  <div className="flex flex-col items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+    <p className="text-muted-foreground">Cargando...</p>
   </div>
-));
+);
 
-LoadingSpinner.displayName = 'LoadingSpinner';
 
-// QueryClient optimizado para producción
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutos
-      gcTime: 10 * 60 * 1000, // 10 minutos
-      retry: (failureCount, error) => {
-        // No reintentar en errores 4xx
-        if (error instanceof Error && error.message.includes('4')) {
-          return false;
-        }
-        return failureCount < 3;
-      },
-      refetchOnWindowFocus: false,
-    },
-    mutations: {
-      retry: 1,
-    },
-  },
-});
 
-// Componente de ruta optimizado
-const OptimizedRoute = memo(({ 
-  element, 
-  fallback = <LoadingSpinner /> 
-}: { 
-  element: React.ReactElement; 
-  fallback?: React.ReactElement;
-}) => (
-  <Suspense fallback={fallback}>
-    {element}
-  </Suspense>
-));
+function App() {
+  // Initialize TaskGuardian for development monitoring
+  useEffect(() => {
+    const guardian = new TaskGuardian();
+    guardian.initializeAscendHubTasks().then((taskIds) => {
+      logger.info('TaskGuardian initialized with tasks:', taskIds);
+    }).catch((error) => {
+      logger.error('Failed to initialize TaskGuardian:', error);
+    });
+    
+    // Precargar componentes críticos después de la carga inicial
+    preloadCriticalComponents();
+    
+    logger.info('Aplicación inicializada con lazy loading optimizado');
+  }, []);
 
-OptimizedRoute.displayName = 'OptimizedRoute';
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <TooltipProvider>
-        <AuthProvider>
-          <CartProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter
-              future={{
-                v7_startTransition: true,
-                v7_relativeSplatPath: true,
-              }}
-            >
-            <Routes>
-              {/* Rutas públicas */}
-              <Route path="/" element={<OptimizedRoute element={<Index />} />} />
-              <Route path="/apple" element={<OptimizedRoute element={<Apple />} />} />
-              <Route path="/electronics" element={<OptimizedRoute element={<Electronics />} />} />
-              <Route path="/electronica" element={<OptimizedRoute element={<Electronics />} />} />
-              <Route path="/buscar" element={<OptimizedRoute element={<SearchResults />} />} />
-              <Route path="/producto/:slug" element={
-                <div className="pt-16 p-8 text-center">
-                  <h1 className="text-2xl font-bold">Producto - En construcción</h1>
-                </div>
-              } />
-              <Route path="/product/:id" element={
-                <div className="pt-16 p-8 text-center">
-                  <h1 className="text-2xl font-bold">Producto - En construcción</h1>
-                </div>
-              } />
-              <Route path="/carrito" element={<OptimizedRoute element={<Cart />} />} />
-              <Route path="/cart" element={<OptimizedRoute element={<Cart />} />} />
-              <Route path="/test-cart" element={<OptimizedRoute element={<TestCart />} />} />
+  return (
+    <ErrorBoundary>
+      <AuthProvider>
+        <CartProvider>
+          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <div className="min-h-screen bg-background">
+              <Routes>
+                <Route 
+                  path="/" 
+                  element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <Index />
+                    </Suspense>
+                  } 
+                />
+                <Route 
+                  path="/apple" 
+                  element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <Apple />
+                    </Suspense>
+                  } 
+                />
+                <Route 
+                  path="/trade-in" 
+                  element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <TradeIn />
+                    </Suspense>
+                  } 
+                />
+                <Route 
+                  path="/cart" 
+                  element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <Cart />
+                    </Suspense>
+                  } 
+                />
+                <Route 
+                  path="/profile" 
+                  element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <Profile />
+                    </Suspense>
+                  } 
+                />
+                <Route 
+                  path="/auth" 
+                  element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <Auth />
+                    </Suspense>
+                  } 
+                />
+                <Route 
+                  path="*" 
+                  element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <NotFound />
+                    </Suspense>
+                  } 
+                />
+              </Routes>
               
-              {/* Rutas de autenticación - solo para usuarios no autenticados */}
-              <Route path="/auth" element={
-                <ProtectedRoute requireAuth={false}>
-                  <OptimizedRoute element={<Auth />} />
-                </ProtectedRoute>
-              } />
+              {/* PWA Components */}
+              <PWAUpdateNotification />
+              <PWAInstallBanner />
               
-              {/* Rutas protegidas - requieren autenticación */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <OptimizedRoute element={<Dashboard />} />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <OptimizedRoute element={<Profile />} />
-                </ProtectedRoute>
-              } />
-              <Route path="/trade-in" element={<OptimizedRoute element={<TradeIn />} />} />
-              <Route path="/parte-de-pago" element={
-                <ProtectedRoute>
-                  <OptimizedRoute element={<TradeIn />} />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin" element={
-                <ProtectedRoute>
-                  <OptimizedRoute element={<Admin />} />
-                </ProtectedRoute>
-              } />
-              <Route path="/checkout" element={
-                <ProtectedRoute>
-                  <div className="pt-16 p-8 text-center">
-                    <h1 className="text-2xl font-bold">Checkout - En construcción</h1>
-                  </div>
-                </ProtectedRoute>
-              } />
-              
-              {/* Ruta 404 */}
-              <Route path="*" element={<OptimizedRoute element={<NotFound />} />} />
-            </Routes>
-            
-            {/* PWA Components */}
-            <PWAInstallBanner />
-            <PWAUpdateNotification />
-          </BrowserRouter>
+              {/* Toast notifications */}
+              <Toaster />
+            </div>
+          </Router>
         </CartProvider>
       </AuthProvider>
-    </TooltipProvider>
-  </ThemeProvider>
-  </QueryClientProvider>
-);
+    </ErrorBoundary>
+  );
+}
 
 export default App;

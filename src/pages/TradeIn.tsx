@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/organisms/Footer';
 import { Button } from '@/components/ui/button';
@@ -7,9 +7,20 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, X, Camera, CheckCircle, AlertCircle } from 'lucide-react';
-import { validateTradeInForm, sanitizeString, isValidImageFile, checkRateLimit } from '@/lib/security';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Upload, X, Camera, CheckCircle, AlertCircle, Smartphone, Laptop, Tablet, Watch, Headphones } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  validateFieldRealTime,
+  validateImageFiles,
+  validateWithZod,
+  tradeInSchema,
+  type TradeInFormData as TradeInFormDataType
+} from '@/lib/validations';
+import { logger } from '@/lib/logger';
 import { toast } from '@/hooks/use-toast';
+import { sanitizeString, isValidImageFile, checkRateLimit } from '@/lib/security';
 
 interface TradeInFormData {
   // Información del producto
@@ -39,7 +50,7 @@ interface TradeInFormData {
 }
 
 const TradeIn = () => {
-  const [formData, setFormData] = useState<TradeInFormData>({
+  const [formData, setFormData] = useState<TradeInFormDataType>({
     categoria: '',
     marca: '',
     modelo: '',
@@ -62,7 +73,7 @@ const TradeIn = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [validationErrors, setValidationErrors] = useState<{field: string, message: string}[]>([]);
 
   const handleInputChange = (field: keyof TradeInFormData, value: string) => {
     // Sanitizar el input antes de guardarlo
@@ -151,8 +162,8 @@ const TradeIn = () => {
     }
     
     // Validar formulario completo
-    const validation = validateTradeInForm(formData);
-    if (!validation.isValid) {
+    const validation = validateWithZod(tradeInSchema, formData);
+    if (!validation.success) {
       setValidationErrors(validation.errors);
       toast({
         title: "Errores en el formulario",
@@ -296,7 +307,7 @@ const TradeIn = () => {
                       </h4>
                       <ul className="list-disc list-inside space-y-1 text-sm text-red-300">
                         {validationErrors.map((error, index) => (
-                          <li key={index}>{error}</li>
+                          <li key={index}>{error.message}</li>
                         ))}
                       </ul>
                     </div>

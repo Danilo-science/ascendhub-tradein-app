@@ -1,19 +1,26 @@
 import { supabase } from '@/integrations/supabase/client';
-import { AuthError, User, Session } from '@supabase/supabase-js';
+import { logger } from './logger';
 
-// Tipos para autenticación
-export interface AuthResponse {
-  user: User | null;
-  session: Session | null;
-  error: AuthError | null;
+export interface AuthResult {
+  user: AuthUser | null;
+  session?: any;
+  error: Error | null;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name?: string;
+  avatar_url?: string;
 }
 
 export interface SignUpData {
   email: string;
   password: string;
+  name?: string;
+  fullName?: string;
   firstName?: string;
   lastName?: string;
-  fullName?: string;
 }
 
 export interface SignInData {
@@ -21,173 +28,300 @@ export interface SignInData {
   password: string;
 }
 
-// Funciones de autenticación con email/password
-export const authService = {
-  // Registro con email y contraseña
-  async signUp({ email, password, firstName, lastName, fullName }: SignUpData): Promise<AuthResponse> {
+export class AuthError extends Error {
+  constructor(message: string, public code?: string) {
+    super(message);
+    this.name = 'AuthError';
+  }
+}
+
+export const auth = {
+  async signUp({ email, password, name, fullName, firstName, lastName }: SignUpData): Promise<AuthResult> {
     try {
+      logger.info('Iniciando registro de usuario');
+      
+      const displayName = name || fullName || `${firstName || ''} ${lastName || ''}`.trim() || firstName;
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            first_name: firstName,
-            last_name: lastName,
-            full_name: fullName || `${firstName || ''} ${lastName || ''}`.trim(),
-            avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+            name: displayName,
           },
         },
       });
 
-      return { user: data.user, session: data.session, error };
+      if (error) {
+        return { user: null, session: null, error: new AuthError(error.message, error.message) };
+      }
+      
+      if (!data.user) {
+        return { user: null, session: null, error: new AuthError('No se pudo crear el usuario') };
+      }
+
+      logger.success('Usuario registrado exitosamente');
+      const user = {
+        id: data.user.id,
+        email: data.user.email!,
+        name: data.user.user_metadata?.name,
+        avatar_url: data.user.user_metadata?.avatar_url,
+      };
+      
+      return { user, session: data.session, error: null };
     } catch (error) {
-      console.error('Sign up error:', error);
-      return { user: null, session: null, error: error as AuthError };
+      logger.authError('Error en registro', error);
+      return { user: null, session: null, error: error as Error };
     }
   },
 
-  // Inicio de sesión con email y contraseña
-  async signIn({ email, password }: SignInData): Promise<AuthResponse> {
+  async signIn({ email, password }: SignInData): Promise<AuthResult> {
     try {
+      logger.info('Iniciando sesión');
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      return { user: data.user, session: data.session, error };
+      if (error) {
+        return { user: null, session: null, error: new AuthError(error.message, error.message) };
+      }
+      
+      if (!data.user) {
+        return { user: null, session: null, error: new AuthError('No se pudo iniciar sesión') };
+      }
+
+      logger.success('Sesión iniciada exitosamente');
+      const user = {
+        id: data.user.id,
+        email: data.user.email!,
+        name: data.user.user_metadata?.name,
+        avatar_url: data.user.user_metadata?.avatar_url,
+      };
+      
+      return { user, session: data.session, error: null };
     } catch (error) {
-      console.error('Sign in error:', error);
-      return { user: null, session: null, error: error as AuthError };
+      logger.authError('Error en inicio de sesión', error);
+      return { user: null, session: null, error: error as Error };
     }
   },
 
-  // Inicio de sesión con Google OAuth
-  async signInWithGoogle(): Promise<AuthResponse> {
+  async signInWithGoogle(): Promise<AuthResult> {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
         },
       });
 
-      return { user: null, session: null, error };
+      if (error) {
+        return { user: null, session: null, error: new AuthError(error.message, error.message) };
+      }
+      
+      // For OAuth, we need to wait for the redirect
+      return { user: null, session: null, error: null };
     } catch (error) {
-      console.error('Google sign in error:', error);
-      return { user: null, session: null, error: error as AuthError };
+      logger.authError('Error en inicio de sesión con Google', error);
+      return { user: null, session: null, error: error as Error };
     }
   },
 
-  // Cerrar sesión
-  async signOut(): Promise<{ error: AuthError | null }> {
+  async signOut(): Promise<{ error: Error | null }> {
     try {
+      logger.info('Cerrando sesión');
+      
       const { error } = await supabase.auth.signOut();
-      return { error };
+      if (error) {
+        return { error: new AuthError(error.message, error.message) };
+      }
+      
+      logger.success('Sesión cerrada exitosamente');
+      return { error: null };
     } catch (error) {
-      console.error('Sign out error:', error);
-      return { error: error as AuthError };
+      logger.authError('Error cerrando sesión', error);
+      return { error: error as Error };
     }
   },
 
-  // Obtener sesión actual
-  async getCurrentSession(): Promise<{ session: Session | null; error: AuthError | null }> {
+  async getSession(): Promise<AuthUser | null> {
     try {
-      const { data, error } = await supabase.auth.getSession();
-      return { session: data.session, error };
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) throw new AuthError(error.message, error.message);
+      if (!session?.user) return null;
+
+      return {
+        id: session.user.id,
+        email: session.user.email!,
+        name: session.user.user_metadata?.name,
+        avatar_url: session.user.user_metadata?.avatar_url,
+      };
     } catch (error) {
-      console.error('Get session error:', error);
-      return { session: null, error: error as AuthError };
+      logger.authError('Error obteniendo sesión', error);
+      return null;
     }
   },
 
-  // Obtener usuario actual
-  async getCurrentUser(): Promise<{ user: User | null; error: AuthError | null }> {
+  async getUser(): Promise<AuthUser | null> {
     try {
-      const { data, error } = await supabase.auth.getUser();
-      return { user: data.user, error };
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error) throw new AuthError(error.message, error.message);
+      if (!user) return null;
+
+      return {
+        id: user.id,
+        email: user.email!,
+        name: user.user_metadata?.name,
+        avatar_url: user.user_metadata?.avatar_url,
+      };
     } catch (error) {
-      console.error('Get user error:', error);
-      return { user: null, error: error as AuthError };
+      logger.authError('Error obteniendo usuario', error);
+      return null;
     }
   },
 
-  // Resetear contraseña
-  async resetPassword(email: string): Promise<{ error: AuthError | null }> {
+  async getCurrentSession(): Promise<{ session: any; error: Error | null }> {
     try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        return { session: null, error: new AuthError(error.message, error.message) };
+      }
+
+      return { session, error: null };
+    } catch (error) {
+      logger.authError('Error obteniendo sesión', error);
+      return { session: null, error: error as Error };
+    }
+  },
+
+  async getCurrentUser(): Promise<{ user: AuthUser | null; error: Error | null }> {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error) {
+        return { user: null, error: new AuthError(error.message, error.message) };
+      }
+      
+      if (!user) {
+        return { user: null, error: null };
+      }
+
+      const authUser = {
+        id: user.id,
+        email: user.email!,
+        name: user.user_metadata?.name,
+        avatar_url: user.user_metadata?.avatar_url,
+      };
+
+      return { user: authUser, error: null };
+    } catch (error) {
+      logger.authError('Error obteniendo usuario', error);
+      return { user: null, error: error as Error };
+    }
+  },
+
+  async resetPassword(email: string): Promise<void> {
+    try {
+      logger.info('Enviando email de recuperación');
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
-      return { error };
+      
+      if (error) throw new AuthError(error.message, error.message);
+      
+      logger.success('Email de recuperación enviado');
     } catch (error) {
-      console.error('Reset password error:', error);
-      return { error: error as AuthError };
+      logger.authError('Error enviando email de recuperación', error);
+      throw error;
     }
   },
 
-  // Actualizar contraseña
-  async updatePassword(password: string): Promise<{ error: AuthError | null }> {
+  async updatePassword(password: string): Promise<void> {
     try {
+      logger.info('Actualizando contraseña');
+      
       const { error } = await supabase.auth.updateUser({ password });
-      return { error };
+      if (error) throw new AuthError(error.message, error.message);
+      
+      logger.success('Contraseña actualizada exitosamente');
     } catch (error) {
-      console.error('Update password error:', error);
-      return { error: error as AuthError };
+      logger.authError('Error actualizando contraseña', error);
+      throw error;
     }
   },
 
-  // Actualizar perfil de usuario
-  async updateProfile(updates: { 
-    email?: string; 
-    data?: { 
-      first_name?: string; 
-      last_name?: string; 
-      full_name?: string; 
-      avatar_url?: string;
-      phone?: string;
-      dateOfBirth?: string;
-      address?: string;
-    } 
-  }): Promise<{ error: AuthError | null }> {
+  async updateProfile(updates: { name?: string; avatar_url?: string }): Promise<AuthUser> {
     try {
-      const { error } = await supabase.auth.updateUser(updates);
-      return { error };
+      logger.info('Actualizando perfil');
+      
+      const { data, error } = await supabase.auth.updateUser({
+        data: updates,
+      });
+      
+      if (error) throw new AuthError(error.message, error.message);
+      if (!data?.user) throw new AuthError('No se pudo actualizar el perfil');
+
+      logger.success('Perfil actualizado exitosamente');
+      return {
+        id: data.user.id,
+        email: data.user.email!,
+        name: data.user.user_metadata?.name,
+        avatar_url: data.user.user_metadata?.avatar_url,
+      };
     } catch (error) {
-      console.error('Update profile error:', error);
-      return { error: error as AuthError };
+      logger.authError('Error actualizando perfil', error);
+      throw error;
     }
   },
 };
 
-// Utilidades para manejo de errores de autenticación
-export const getAuthErrorMessage = (error: AuthError | null): string => {
-  if (!error) return '';
+// Export aliases for backward compatibility
+export const authService = auth;
+export const signIn = auth.signIn;
+export const signUp = auth.signUp;
 
-  switch (error.message) {
-    case 'Invalid login credentials':
-      return 'Credenciales de inicio de sesión inválidas';
-    case 'User already registered':
-      return 'El usuario ya está registrado';
-    case 'Email not confirmed':
-      return 'Email no confirmado. Revisa tu bandeja de entrada';
-    case 'Password should be at least 6 characters':
-      return 'La contraseña debe tener al menos 6 caracteres';
-    case 'Invalid email':
-      return 'Email inválido';
-    case 'Signup requires a valid password':
-      return 'El registro requiere una contraseña válida';
-    default:
-      return error.message || 'Ha ocurrido un error inesperado';
+// Error message helper function
+export const getAuthErrorMessage = (error: unknown): string => {
+  let message = '';
+  
+  if (error instanceof AuthError) {
+    message = error.message;
+  } else if (error instanceof Error) {
+    message = error.message;
+  } else if (error && typeof error === 'object' && 'message' in error) {
+    message = (error as any).message || '';
   }
-};
 
-// Hook personalizado para autenticación
-export const useSupabaseAuth = () => {
-  return {
-    ...authService,
-    getErrorMessage: getAuthErrorMessage,
-  };
+  // Handle specific error messages
+  if (message.includes('Invalid login credentials') || message.includes('invalid_credentials')) {
+    return 'Credenciales de inicio de sesión inválidas';
+  }
+  
+  if (message.includes('User already registered') || message.includes('already_registered')) {
+    return 'El usuario ya está registrado';
+  }
+  
+  if (message.includes('Email not confirmed') || message.includes('email_not_confirmed')) {
+    return 'Por favor confirma tu email antes de iniciar sesión';
+  }
+  
+  if (message.includes('Password should be at least 6 characters') || message.includes('weak_password')) {
+    return 'La contraseña debe tener al menos 6 caracteres';
+  }
+  
+  if (message.includes('Invalid email') || message.includes('invalid_email')) {
+    return 'El formato del email no es válido';
+  }
+  
+  if (message.includes('Signups not allowed for this instance') || message.includes('signup_disabled')) {
+    return 'El registro de nuevos usuarios está deshabilitado';
+  }
+
+  // Return generic message for unknown errors or when message is empty/undefined
+  return 'Ha ocurrido un error inesperado. Por favor intenta de nuevo.';
 };

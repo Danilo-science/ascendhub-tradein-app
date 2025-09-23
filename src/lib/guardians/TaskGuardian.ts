@@ -77,10 +77,10 @@ export class TaskGuardian {
       estimatedTime: number;
     }> = [
       {
-        description: "Eliminar componente CartSidebar duplicado",
+        description: "Optimizar componente CartSidebar existente",
         taskType: TaskType.ComponentFix,
-        priority: 'high',
-        estimatedTime: 30
+        priority: 'medium',
+        estimatedTime: 45
       },
       {
         description: "Estandarizar imports de React en toda la aplicación",

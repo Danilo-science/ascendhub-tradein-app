@@ -6,6 +6,7 @@ import { useCartActions } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge as UIBadge } from '@/components/ui/badge';
+import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 
 interface ProductCardProps {
   product: EnhancedProduct;
@@ -332,14 +333,14 @@ export const ProductCard = memo<ProductCardProps>(({
       <Card className={`${styles.card} group cursor-pointer overflow-hidden`}>
         <div className="flex flex-col sm:flex-row">
           <div className="relative w-full sm:w-48 h-48 sm:h-32 flex-shrink-0">
-            <img
+            <ImageWithFallback
               src={product.images[0]}
               alt={product.title}
               className={`w-full h-full object-cover transition-opacity duration-300 ${
                 imageLoaded ? 'opacity-100' : 'opacity-0'
               }`}
-              onLoad={() => setImageLoaded(true)}
-              loading="lazy"
+              onError={() => setImageLoaded(true)}
+              sizes="(max-width: 640px) 100vw, 192px"
             />
             {!imageLoaded && (
               <div className="absolute inset-0 bg-gray-200 animate-pulse" />
@@ -437,14 +438,14 @@ export const ProductCard = memo<ProductCardProps>(({
           {/* Glow effect */}
           <div className="absolute inset-0 bg-gradient-to-br from-purple-400/20 via-pink-400/20 to-blue-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           
-          <img
+          <ImageWithFallback
             src={product.images[0]}
             alt={product.title}
             className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
-            onLoad={() => setImageLoaded(true)}
-            loading="lazy"
+            onError={() => setImageLoaded(true)}
+            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
           {!imageLoaded && (
             <div className="absolute inset-0 bg-gray-200 animate-pulse" />

@@ -35,11 +35,11 @@ export const UserProfile: React.FC = () => {
   useEffect(() => {
     if (user) {
       setProfileData({
-        fullName: user.user_metadata?.full_name || user.user_metadata?.fullName || '',
+        fullName: user.name || '',
         email: user.email || '',
-        phone: user.user_metadata?.phone || '',
-        dateOfBirth: user.user_metadata?.dateOfBirth || '',
-        address: user.user_metadata?.address || ''
+        phone: '',
+        dateOfBirth: '',
+        address: ''
       });
     }
   }, [user]);
@@ -57,18 +57,10 @@ export const UserProfile: React.FC = () => {
     setLoading(true);
     try {
       // Actualizar perfil usando el servicio de auth
-      const { error } = await authService.updateProfile({
-        data: {
-          full_name: profileData.fullName,
-          phone: profileData.phone,
-          dateOfBirth: profileData.dateOfBirth,
-          address: profileData.address
-        }
+      await authService.updateProfile({
+        name: profileData.fullName,
+        avatar_url: user.avatar_url
       });
-
-      if (error) {
-        throw new Error(error.message);
-      }
 
       setIsEditing(false);
       toast({
@@ -89,14 +81,14 @@ export const UserProfile: React.FC = () => {
     }
   };
 
-  const handleCancelEdit = () => {
+  const resetForm = () => {
     if (user) {
       setProfileData({
-        fullName: user.user_metadata?.full_name || user.user_metadata?.fullName || '',
+        fullName: user.name || '',
         email: user.email || '',
-        phone: user.user_metadata?.phone || '',
-        dateOfBirth: user.user_metadata?.dateOfBirth || '',
-        address: user.user_metadata?.address || ''
+        phone: '',
+        dateOfBirth: '',
+        address: ''
       });
     }
     setIsEditing(false);
@@ -172,7 +164,7 @@ export const UserProfile: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleCancelEdit}
+                  onClick={resetForm}
                   disabled={loading}
                   className="flex items-center gap-2"
                 >
@@ -308,7 +300,7 @@ export const UserProfile: React.FC = () => {
               <div className="space-y-2">
                 <Label>Fecha de Registro</Label>
                 <div className="p-3 bg-muted rounded-md text-sm">
-                  {user.created_at ? new Date(user.created_at).toLocaleDateString('es-ES') : 'No disponible'}
+                  No disponible
                 </div>
               </div>
             </div>

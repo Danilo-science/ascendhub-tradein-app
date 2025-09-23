@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import Navigation from '@/components/Navigation';
@@ -8,7 +9,22 @@ import { getFeaturedProducts } from '@/lib/products';
 import { Apple, Smartphone, ArrowRight, Zap, Shield, Truck, Star, Sparkles } from 'lucide-react';
 
 const Index = () => {
-  const featuredProducts = getFeaturedProducts();
+  const [loading, setLoading] = useState(true);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+
+  useEffect(() => {
+    // Simular carga de productos destacados
+    const loadFeaturedProducts = async () => {
+      setLoading(true);
+      // Simular delay de red
+      await new Promise(resolve => setTimeout(resolve, 800));
+      const products = getFeaturedProducts();
+      setFeaturedProducts(products);
+      setLoading(false);
+    };
+
+    loadFeaturedProducts();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -280,6 +296,7 @@ const Index = () => {
                 section="default"
                 showFilters={false}
                 itemsPerPage={8}
+                loading={loading}
               />
             </div>
           </motion.div>

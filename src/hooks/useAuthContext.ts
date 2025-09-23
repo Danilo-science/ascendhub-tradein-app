@@ -1,8 +1,9 @@
 import { createContext, useContext } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
+import { AuthUser } from '@/lib/auth';
 
 export interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;

@@ -13,6 +13,14 @@ export default {
         "2xl": "1400px",
       },
     },
+    screens: {
+      'sm': '640px',
+      'md': '768px',
+      'tablet': '768px',
+      'lg': '1024px',
+      'xl': '1280px',
+      '2xl': '1536px',
+    },
     extend: {
       fontFamily: {
         'heading': ['Montserrat', 'sans-serif'],
@@ -108,10 +116,19 @@ export default {
             height: "0",
           },
         },
+        shimmer: {
+          "0%": {
+            "background-position": "-200px 0",
+          },
+          "100%": {
+            "background-position": "calc(200px + 100%) 0",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        shimmer: "shimmer 2s linear infinite",
       },
     },
   },

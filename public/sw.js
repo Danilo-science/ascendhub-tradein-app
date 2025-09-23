@@ -10,9 +10,9 @@ const STATIC_ASSETS = [
   '/manifest.json',
   '/offline.html',
   // Iconos PWA
-  '/icon-192x192.png',
-  '/icon-512x512.png',
-  '/apple-touch-icon.png',
+  '/icon-192x192.svg',
+  '/icon-512x512.svg',
+  '/apple-touch-icon-192.svg',
   '/favicon.ico'
 ];
 

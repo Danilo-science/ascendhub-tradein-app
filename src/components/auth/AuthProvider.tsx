@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { authService } from '@/lib/auth';
+import { authService, AuthUser } from '@/lib/auth';
 import { toast } from '@/hooks/use-toast';
 import { AuthContext, AuthContextType } from '@/hooks/useAuthContext';
 
@@ -10,7 +10,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -23,7 +23,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.error('Error getting session:', error);
         } else {
           setSession(session);
-          setUser(session?.user ?? null);
+          if (session?.user) {
+            const authUser: AuthUser = {
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
+              avatar_url: session.user.user_metadata?.avatar_url || null
+            };
+            setUser(authUser);
+          } else {
+            setUser(null);
+          }
         }
       } catch (error) {
         console.error('Error in getInitialSession:', error);
@@ -39,7 +49,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       async (event, session) => {
         console.log('Auth state changed:', event, session);
         setSession(session);
-        setUser(session?.user ?? null);
+        if (session?.user) {
+          const authUser: AuthUser = {
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
+            avatar_url: session.user.user_metadata?.avatar_url || null
+          };
+          setUser(authUser);
+        } else {
+          setUser(null);
+        }
         setLoading(false);
       }
     );

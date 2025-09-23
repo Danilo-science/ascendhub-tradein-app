@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useRef } from 'react';
+import { logger } from '@/lib/logger';
 
 export interface Product {
   id: string;

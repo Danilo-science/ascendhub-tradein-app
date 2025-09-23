@@ -1,13 +1,13 @@
-import React from 'react';
-import { Moon, Sun } from 'lucide-react';
+import { useState } from 'react';
+import { Moon, Sun } from "lucide-react";
 import { Button } from '@/components/ui/button';
 
 interface ThemeToggleProps {
   className?: string;
 }
 
-const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
-  const [isDark, setIsDark] = React.useState(false);
+const ThemeToggle = ({ className = '' }: ThemeToggleProps) => {
+  const [isDark, setIsDark] = useState(false);
 
   const toggleTheme = () => {
     setIsDark(!isDark);

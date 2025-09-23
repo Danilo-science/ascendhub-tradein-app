@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/organisms/Footer';
 import { ProductGrid } from '@/components/ProductGrid';
@@ -7,7 +8,22 @@ import { getProductsBySection } from '@/lib/products';
 import { Apple, ArrowRight } from 'lucide-react';
 
 const ApplePage = () => {
-  const appleProducts = getProductsBySection('apple');
+  const [loading, setLoading] = useState(true);
+  const [appleProducts, setAppleProducts] = useState([]);
+
+  useEffect(() => {
+    // Simular carga de productos
+    const loadProducts = async () => {
+      setLoading(true);
+      // Simular delay de red
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const products = getProductsBySection('apple');
+      setAppleProducts(products);
+      setLoading(false);
+    };
+
+    loadProducts();
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">
@@ -57,6 +73,7 @@ const ApplePage = () => {
             section="apple"
             showFilters={true}
             itemsPerPage={12}
+            loading={loading}
           />
         </div>
       </section>

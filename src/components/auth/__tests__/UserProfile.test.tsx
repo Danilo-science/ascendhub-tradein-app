@@ -2,14 +2,14 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { User } from '@supabase/supabase-js';
+import { AuthUser } from '@/lib/auth';
 import UserProfile from '../UserProfile';
 import { useAuth } from '@/hooks/useAuthContext';
 import { authService } from '@/lib/auth';
 import { toast } from '@/hooks/use-toast';
 
 // Mock del hook useAuth
-vi.mock('../AuthProvider', () => ({
+vi.mock('@/hooks/useAuthContext', () => ({
   useAuth: vi.fn(),
 }));
 
@@ -41,18 +41,11 @@ vi.mock('react-router-dom', async (importOriginal) => {
 });
 
 // Mock de usuario completo
-const createMockUser = (overrides: Partial<User> = {}): User => ({
+const createMockUser = (overrides: Partial<AuthUser> = {}): AuthUser => ({
   id: '1',
   email: 'test@example.com',
-  app_metadata: {},
-  user_metadata: {
-    full_name: 'John Doe',
-    phone: '+1234567890',
-    date_of_birth: '1990-01-01',
-    address: '123 Main St, City, Country',
-  },
-  aud: 'authenticated',
-  created_at: '2023-01-01T00:00:00.000Z',
+  name: 'John Doe',
+  avatar_url: undefined,
   ...overrides,
 });
 
@@ -239,7 +232,7 @@ describe('UserProfile', () => {
 
     it('should handle user without metadata', () => {
       const userWithoutMetadata = createMockUser({
-        user_metadata: {},
+        name: '',
       });
 
       vi.mocked(useAuth).mockReturnValue({

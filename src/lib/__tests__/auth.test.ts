@@ -79,7 +79,16 @@ describe('authService', () => {
         email: 'test@example.com',
         password: 'password123',
       });
-      expect(result).toEqual({ user: mockUser, session: mockSession, error: null });
+      expect(result).toEqual({ 
+        user: {
+          id: mockUser.id,
+          email: mockUser.email,
+          name: mockUser.user_metadata?.name,
+          avatar_url: mockUser.user_metadata?.avatar_url,
+        }, 
+        session: mockSession, 
+        error: null 
+      });
     });
 
     it('should handle sign in error', async () => {
@@ -92,7 +101,14 @@ describe('authService', () => {
         password: 'wrongpassword'
       });
 
-      expect(result).toEqual({ user: null, session: null, error: mockError });
+      expect(result).toEqual({ 
+        user: null, 
+        session: null, 
+        error: expect.objectContaining({
+          message: 'Invalid credentials',
+          code: 'Invalid credentials'
+        })
+      });
     });
   });
 
@@ -105,7 +121,7 @@ describe('authService', () => {
       const result = await authService.signUp({
         email: 'test@example.com',
         password: 'password123',
-        fullName: 'John Doe'
+        name: 'John Doe'
       });
 
       expect(supabase.auth.signUp).toHaveBeenCalledWith({
@@ -113,14 +129,20 @@ describe('authService', () => {
         password: 'password123',
         options: {
           data: {
-            first_name: undefined,
-            last_name: undefined,
-            full_name: 'John Doe',
-            avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=test@example.com',
+            name: 'John Doe',
           },
         },
       });
-      expect(result).toEqual({ user: mockUser, session: null, error: null });
+      expect(result).toEqual({ 
+        user: {
+          id: mockUser.id,
+          email: mockUser.email,
+          name: mockUser.user_metadata?.name,
+          avatar_url: mockUser.user_metadata?.avatar_url,
+        }, 
+        session: null, 
+        error: null 
+      });
     });
 
     it('should handle sign up error', async () => {
@@ -134,7 +156,14 @@ describe('authService', () => {
         fullName: 'John Doe'
       });
 
-      expect(result).toEqual({ user: null, session: null, error: mockError });
+      expect(result).toEqual({ 
+        user: null, 
+        session: null, 
+        error: expect.objectContaining({
+          message: 'Email already registered',
+          code: 'Email already registered'
+        })
+      });
     });
   });
 
@@ -149,10 +178,6 @@ describe('authService', () => {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
         },
       });
       expect(result).toEqual({ user: null, session: null, error: null });
@@ -165,7 +190,14 @@ describe('authService', () => {
 
       const result = await authService.signInWithGoogle();
 
-      expect(result).toEqual({ user: null, session: null, error: mockError });
+      expect(result).toEqual({ 
+        user: null, 
+        session: null, 
+        error: expect.objectContaining({
+          message: 'OAuth error',
+          code: 'OAuth error'
+        })
+      });
     });
   });
 
@@ -187,7 +219,12 @@ describe('authService', () => {
 
       const result = await authService.signOut();
 
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual({ 
+        error: expect.objectContaining({
+          message: 'Sign out failed',
+          code: 'Sign out failed'
+        })
+      });
     });
   });
 
@@ -221,7 +258,13 @@ describe('authService', () => {
 
       const result = await authService.getCurrentSession();
 
-      expect(result).toEqual({ session: null, error: mockError });
+      expect(result).toEqual({ 
+        session: null, 
+        error: expect.objectContaining({
+          message: 'Session error',
+          code: 'Session error'
+        })
+      });
     });
   });
 
@@ -234,7 +277,15 @@ describe('authService', () => {
       const result = await authService.getCurrentUser();
 
       expect(supabase.auth.getUser).toHaveBeenCalled();
-      expect(result).toEqual({ user: mockUser, error: null });
+      expect(result).toEqual({ 
+        user: {
+          id: mockUser.id,
+          email: mockUser.email,
+          name: mockUser.user_metadata?.name,
+          avatar_url: mockUser.user_metadata?.avatar_url,
+        }, 
+        error: null 
+      });
     });
 
     it('should handle get user error', async () => {
@@ -244,35 +295,45 @@ describe('authService', () => {
 
       const result = await authService.getCurrentUser();
 
-      expect(result).toEqual({ user: null, error: mockError });
+      expect(result).toEqual({ 
+        user: null, 
+        error: expect.objectContaining({
+          message: 'User not found',
+          code: 'User not found'
+        })
+      });
     });
   });
 
   describe('updateProfile', () => {
     it('should update profile successfully', async () => {
-      const mockResponse = { error: null };
+      const mockUser = createMockUser('1', 'test@example.com');
+      const mockResponse = { data: { user: mockUser }, error: null };
       vi.mocked(supabase.auth.updateUser).mockResolvedValue(mockResponse as MockUpdateResponse);
 
-      const result = await authService.updateProfile({ email: 'newemail@example.com' });
+      const result = await authService.updateProfile({ name: 'New Name' });
 
       expect(supabase.auth.updateUser).toHaveBeenCalledWith({
-        email: 'newemail@example.com',
+        data: { name: 'New Name' },
       });
-      expect(result).toEqual({ error: null });
+      expect(result).toEqual({
+        id: mockUser.id,
+        email: mockUser.email,
+        name: mockUser.user_metadata?.name,
+        avatar_url: mockUser.user_metadata?.avatar_url,
+      });
     });
 
     it('should handle update profile error', async () => {
       const mockError = createMockAuthError('Update failed');
-      const mockResponse = { error: mockError };
+      const mockResponse = { data: null, error: mockError };
       vi.mocked(supabase.auth.updateUser).mockResolvedValue(mockResponse as MockUpdateResponse);
 
-      const result = await authService.updateProfile({ email: 'newemail@example.com' });
+      await expect(authService.updateProfile({ name: 'New Name' })).rejects.toThrow('Update failed');
 
       expect(supabase.auth.updateUser).toHaveBeenCalledWith({
-        email: 'newemail@example.com',
+        data: { name: 'New Name' },
       });
-
-      expect(result).toEqual({ error: mockError });
     });
   });
 });

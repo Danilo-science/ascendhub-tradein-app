@@ -26,7 +26,7 @@ export async function initializeGuardianSystem() {
 export async function demonstrateTaskFlow() {
   const { guardian, taskIds } = await initializeGuardianSystem();
   
-  // Tomar la primera tarea (eliminar CartSidebar duplicado)
+  // Tomar la primera tarea (optimizar CartSidebar existente)
   const taskId = taskIds[0];
   const task = guardian.getTask(taskId);
   
@@ -34,12 +34,11 @@ export async function demonstrateTaskFlow() {
   
   try {
     // 1. Comenzar la tarea
-    await guardian.transitionTask(taskId, TaskState.InProgress, 'Iniciando eliminación de duplicado');
+    await guardian.transitionTask(taskId, TaskState.InProgress, 'Iniciando optimización de componente');
     console.log('🚀 Tarea iniciada');
     
     // 2. Simular trabajo (actualizar archivos modificados)
     guardian.updateModifiedFiles(taskId, [
-      'src/components/CartSidebar.tsx',
       'src/components/organisms/CartSidebar.tsx'
     ]);
     console.log('📝 Archivos registrados como modificados');

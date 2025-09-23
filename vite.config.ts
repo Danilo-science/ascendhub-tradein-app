@@ -41,10 +41,22 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
+          // Core React libraries
           vendor: ['react', 'react-dom'],
+          // Router and navigation
+          router: ['react-router-dom'],
+          // UI components and styling
           ui: ['@radix-ui/react-dialog', '@radix-ui/react-toast', '@radix-ui/react-slot'],
+          // Animation libraries
+          animation: ['motion/react', 'framer-motion'],
+          // Utility libraries
           utils: ['clsx', 'tailwind-merge', 'class-variance-authority'],
+          // Icons
           icons: ['lucide-react'],
+          // Form handling
+          forms: ['react-hook-form', '@hookform/resolvers'],
+          // Date utilities
+          date: ['date-fns'],
         },
       },
     },

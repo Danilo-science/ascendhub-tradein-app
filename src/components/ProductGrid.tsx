@@ -3,6 +3,7 @@ import { Search, Filter, Grid, List, ChevronDown, X, SlidersHorizontal } from 'l
 import { motion } from 'motion/react';
 import { EnhancedProduct, ProductFilters, ProductSortOption } from '@/types';
 import { ProductCard } from './ProductCard';
+import { ProductGridSkeleton } from './ui/SkeletonLoader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -20,6 +21,7 @@ interface ProductGridProps {
   showFilters?: boolean;
   itemsPerPage?: number;
   defaultView?: 'grid' | 'list';
+  loading?: boolean;
 }
 
 export const ProductGrid: React.FC<ProductGridProps> = ({
@@ -28,7 +30,8 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   title,
   showFilters = true,
   itemsPerPage = 12,
-  defaultView = 'grid'
+  defaultView = 'grid',
+  loading = false
 }) => {
   // Validación temprana para evitar errores
   if (!products || !Array.isArray(products)) {
@@ -479,7 +482,9 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          {paginatedProducts.length === 0 ? (
+          {loading ? (
+            <ProductGridSkeleton count={itemsPerPage} />
+          ) : paginatedProducts.length === 0 ? (
             <motion.div 
               className="text-center py-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg shadow-lg"
               initial={{ opacity: 0, scale: 0.9 }}
